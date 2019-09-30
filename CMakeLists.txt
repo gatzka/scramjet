@@ -9,7 +9,7 @@ FetchContent_Declare(cio
 FetchContent_GetProperties(cio)
 if(NOT cio_POPULATED)
     FetchContent_Populate(cio)
-    add_subdirectory(${cio_SOURCE_DIR} ${cio_BINARY_DIR})
+    add_subdirectory(${cio_SOURCE_DIR}/src/ ${cio_BINARY_DIR})
 endif()
 
 add_executable(scramjet
