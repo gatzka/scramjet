@@ -25,13 +25,106 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include <stdio.h>
+
+#include <signal.h>
+#include <stdint.h>
 #include <stdlib.h>
 
-#include <cio_version.h>
+#include "cio_eventloop.h"
+#include "cio_server_socket.h"
+
+static const uint64_t close_timeout_ns = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
+static const unsigned int SERVERSOCKET_BACKLOG = 5;
+static const uint16_t SERVERSOCKET_LISTEN_PORT = 12345;
+
+static struct cio_eventloop loop;
+
+static void sighandler(int signum)
+{
+	(void)signum;
+	cio_eventloop_cancel(&loop);
+}
+
+static struct cio_socket *alloc_jet_client(void)
+{
+	//struct echo_client *client = malloc(sizeof(*client));
+	//if (cio_unlikely(client == NULL)) {
+	//	return NULL;
+	//}
+
+	//return &client->socket;
+	return NULL;
+}
+
+static void free_jet_client(struct cio_socket *socket)
+{
+	(void)socket;
+	//struct echo_client *client = cio_container_of(socket, struct echo_client, socket);
+	//free(client);
+}
+
+static void handle_accept(struct cio_server_socket *ss, void *handler_context, enum cio_error err, struct cio_socket *socket)
+{
+	(void)handler_context;
+	(void)ss;
+	(void)err;
+	(void)socket;
+}
 
 int main(void)
 {
-	printf("cio_version: %s\n", cio_get_version_string());
-	return EXIT_SUCCESS;
+	int ret = EXIT_SUCCESS;
+
+	enum cio_error err = cio_eventloop_init(&loop);
+	if (err != CIO_SUCCESS) {
+		return EXIT_FAILURE;
+	}
+
+	if (signal(SIGTERM, sighandler) == SIG_ERR) {
+		return EXIT_FAILURE;
+	}
+
+	if (signal(SIGINT, sighandler) == SIG_ERR) {
+		signal(SIGTERM, SIG_DFL);
+		return EXIT_FAILURE;
+	}
+
+	struct cio_server_socket ss;
+	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG, alloc_jet_client, free_jet_client, close_timeout_ns, NULL);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		goto destroy_loop;
+	}
+
+	err = cio_server_socket_set_reuse_address(&ss, true);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		goto close_socket;
+	}
+
+	err = cio_server_socket_bind(&ss, NULL, SERVERSOCKET_LISTEN_PORT);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		goto close_socket;
+	}
+
+	err = cio_server_socket_accept(&ss, handle_accept, NULL);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		goto close_socket;
+	}
+
+	err = cio_eventloop_run(&loop);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+	}
+
+close_socket:
+	cio_server_socket_close(&ss);
+destroy_loop:
+	cio_eventloop_destroy(&loop);
+	return ret;
+
+
+	return ret;
 }
