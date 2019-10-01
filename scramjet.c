@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: MIT
  *
- *The MIT License (MIT)
+ * The MIT License (MIT)
  *
  * Copyright (c) <2019> <Stephan Gatzka>
  *
@@ -32,10 +32,16 @@
 
 #include "cio_eventloop.h"
 #include "cio_server_socket.h"
+#include "cio_socket.h"
+#include "cio_util.h"
 
 static const uint64_t close_timeout_ns = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
-static const unsigned int SERVERSOCKET_BACKLOG = 5;
-static const uint16_t SERVERSOCKET_LISTEN_PORT = 12345;
+enum {SERVERSOCKET_BACKLOG = 5};
+enum {SERVERSOCKET_LISTEN_PORT = 12345};
+
+struct jet_client {
+	struct cio_socket socket;
+};
 
 static struct cio_eventloop loop;
 
@@ -47,28 +53,32 @@ static void sighandler(int signum)
 
 static struct cio_socket *alloc_jet_client(void)
 {
-	//struct echo_client *client = malloc(sizeof(*client));
-	//if (cio_unlikely(client == NULL)) {
-	//	return NULL;
-	//}
+	struct jet_client *client = malloc(sizeof(*client));
+	if (cio_unlikely(client == NULL)) {
+		return NULL;
+	}
 
-	//return &client->socket;
-	return NULL;
+	return &client->socket;
 }
 
 static void free_jet_client(struct cio_socket *socket)
 {
-	(void)socket;
-	//struct echo_client *client = cio_container_of(socket, struct echo_client, socket);
-	//free(client);
+	struct jet_client *client = cio_container_of(socket, struct jet_client, socket);
+	free(client);
 }
 
 static void handle_accept(struct cio_server_socket *ss, void *handler_context, enum cio_error err, struct cio_socket *socket)
 {
 	(void)handler_context;
-	(void)ss;
-	(void)err;
 	(void)socket;
+
+	if (err != CIO_SUCCESS) {
+		//fprintf(stderr, "accept error!\n");
+		cio_server_socket_close(ss);
+		cio_eventloop_cancel(ss->impl.loop);
+		return;
+	}
+
 }
 
 int main(void)
@@ -123,8 +133,5 @@ close_socket:
 	cio_server_socket_close(&ss);
 destroy_loop:
 	cio_eventloop_destroy(&loop);
-	return ret;
-
-
 	return ret;
 }
