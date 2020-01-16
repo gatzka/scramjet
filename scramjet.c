@@ -34,6 +34,7 @@
 #include "cio_server_socket.h"
 #include "cio_socket.h"
 #include "cio_util.h"
+#include "hs_hash.h"
 
 static const uint64_t close_timeout_ns = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 enum {SERVERSOCKET_BACKLOG = 5};
