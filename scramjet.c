@@ -33,12 +33,13 @@
 #include "cio_eventloop.h"
 #include "cio_server_socket.h"
 #include "cio_socket.h"
+#include "cio_socket_address.h"
 #include "cio_util.h"
 #include "hs_hash.h"
 
 static const uint64_t close_timeout_ns = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
-enum {SERVERSOCKET_BACKLOG = 5};
-enum {SERVERSOCKET_LISTEN_PORT = 12345};
+enum { SERVERSOCKET_BACKLOG = 5 };
+enum { SERVERSOCKET_LISTEN_PORT = 12345 };
 
 struct jet_client {
 	struct cio_socket socket;
@@ -100,11 +101,23 @@ int main(void)
 		return EXIT_FAILURE;
 	}
 
+	struct cio_socket_address endpoint;
+	err = cio_init_inet_socket_address(&endpoint, cio_get_inet_address_any4(), SERVERSOCKET_LISTEN_PORT);
+	if (err != CIO_SUCCESS) {
+		return -1;
+	}
+
 	struct cio_server_socket ss;
-	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG, alloc_jet_client, free_jet_client, close_timeout_ns, NULL);
+	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG, cio_socket_address_get_family(&endpoint), alloc_jet_client, free_jet_client, close_timeout_ns, NULL);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
 		goto destroy_loop;
+	}
+
+	err = cio_server_socket_set_tcp_fast_open(&ss, true);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		ret = EXIT_FAILURE;
+		goto close_socket;
 	}
 
 	err = cio_server_socket_set_reuse_address(&ss, true);
@@ -113,7 +126,7 @@ int main(void)
 		goto close_socket;
 	}
 
-	err = cio_server_socket_bind(&ss, NULL, SERVERSOCKET_LISTEN_PORT);
+	err = cio_server_socket_bind(&ss, &endpoint);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
 		goto close_socket;
@@ -134,5 +147,6 @@ close_socket:
 	cio_server_socket_close(&ss);
 destroy_loop:
 	cio_eventloop_destroy(&loop);
+
 	return ret;
 }

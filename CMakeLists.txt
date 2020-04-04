@@ -26,8 +26,8 @@ endif()
 add_executable(scramjet
     scramjet.c
 )
-target_link_libraries(scramjet cio:cio)
-target_link_libraries(scramjet hs_hash:hs_hash)
+target_link_libraries(scramjet cio::cio)
+target_link_libraries(scramjet hs_hash::hs_hash)
 set_target_properties(scramjet PROPERTIES
     C_STANDARD_REQUIRED ON
     C_EXTENSIONS OFF
