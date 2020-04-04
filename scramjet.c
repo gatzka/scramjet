@@ -36,6 +36,9 @@
 #include "cio_socket_address.h"
 #include "cio_util.h"
 #include "hs_hash.h"
+#include "sclog.h"
+#include "sclog_stderr_sink.h"
+#include "sj_log.h"
 
 static const uint64_t close_timeout_ns = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 enum { SERVERSOCKET_BACKLOG = 5 };
@@ -75,78 +78,104 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context, e
 	(void)socket;
 
 	if (err != CIO_SUCCESS) {
-		//fprintf(stderr, "accept error!\n");
+		sclog_message(&sj_log, SCLOG_ERROR, "Error in handle_accept!");
 		cio_server_socket_close(ss);
 		cio_eventloop_cancel(ss->impl.loop);
 		return;
 	}
-
 }
 
 int main(void)
 {
 	int ret = EXIT_SUCCESS;
 
-	enum cio_error err = cio_eventloop_init(&loop);
-	if (err != CIO_SUCCESS) {
+	struct sclog_sink stderr_sink;
+	if (sclog_stderr_sink_init(&stderr_sink) != 0) {
 		return EXIT_FAILURE;
 	}
 
-	if (signal(SIGTERM, sighandler) == SIG_ERR) {
+	if (sclog_init(&sj_log, "scramjet", SCLOG_INFO, &stderr_sink) != 0) {
 		return EXIT_FAILURE;
+	}
+
+	enum cio_error err = cio_eventloop_init(&loop);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not init eventloop!");
+		goto err;
+	}
+
+	if (signal(SIGTERM, sighandler) == SIG_ERR) {
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not install signal handler for SIGTERM!");
+		goto err;
 	}
 
 	if (signal(SIGINT, sighandler) == SIG_ERR) {
 		signal(SIGTERM, SIG_DFL);
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not install signal handler for SIGINT!");
+		goto err;
 	}
 
 	struct cio_socket_address endpoint;
 	err = cio_init_inet_socket_address(&endpoint, cio_get_inet_address_any4(), SERVERSOCKET_LISTEN_PORT);
 	if (err != CIO_SUCCESS) {
-		return -1;
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not init listen socket address!");
+		goto err;
 	}
 
 	struct cio_server_socket ss;
 	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG, cio_socket_address_get_family(&endpoint), alloc_jet_client, free_jet_client, close_timeout_ns, NULL);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not init server socket!");
 		goto destroy_loop;
 	}
 
 	err = cio_server_socket_set_tcp_fast_open(&ss, true);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not set TCP NODELAY!");
 		goto close_socket;
 	}
 
 	err = cio_server_socket_set_reuse_address(&ss, true);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not set reuse address socket option!");
 		goto close_socket;
 	}
 
 	err = cio_server_socket_bind(&ss, &endpoint);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not bind to socket endpoint!");
 		goto close_socket;
 	}
 
 	err = cio_server_socket_accept(&ss, handle_accept, NULL);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not accept on server socket!");
 		goto close_socket;
 	}
+
+	sclog_message(&sj_log, SCLOG_INFO, "Starting eventloop!");
 
 	err = cio_eventloop_run(&loop);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
 	}
 
 close_socket:
 	cio_server_socket_close(&ss);
 destroy_loop:
 	cio_eventloop_destroy(&loop);
+err:
+	sclog_close(&sj_log);
 
 	return ret;
 }

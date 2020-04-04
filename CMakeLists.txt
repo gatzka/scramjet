@@ -34,6 +34,7 @@ endif()
 
 add_executable(scramjet
     scramjet.c
+    sj_log.c
 )
 target_link_libraries(scramjet cio::cio)
 target_link_libraries(scramjet hs_hash::hs_hash)
