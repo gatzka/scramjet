@@ -23,11 +23,21 @@ if(NOT hs_hash_POPULATED)
     add_subdirectory(${hs_hash_SOURCE_DIR}/ ${hs_hash_BINARY_DIR})
 endif()
 
+FetchContent_Declare(sclog
+    GIT_REPOSITORY https://github.com/gatzka/sclog.git
+)
+FetchContent_GetProperties(sclog)
+if(NOT sclog_POPULATED)
+    FetchContent_Populate(sclog)
+    add_subdirectory(${sclog_SOURCE_DIR}/ ${sclog_BINARY_DIR})
+endif()
+
 add_executable(scramjet
     scramjet.c
 )
 target_link_libraries(scramjet cio::cio)
 target_link_libraries(scramjet hs_hash::hs_hash)
+target_link_libraries(scramjet sclog::sclog)
 set_target_properties(scramjet PROPERTIES
     C_STANDARD_REQUIRED ON
     C_EXTENSIONS OFF
