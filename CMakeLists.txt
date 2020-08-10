@@ -4,15 +4,32 @@ project(scramjet C)
 include(FetchContent)
 #set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external/")
 
-FetchContent_Declare(cio
+
+#no version yet...
+set(cio_REQUIREDVERSION "")
+find_package(cio ${cio_REQUIREDVERSION} QUIET)
+if(cio_FOUND)
+    message(STATUS "Found cio: ${cio_VERSION} ${cio_CONFIG}")
+else()
+  include(FetchContent)
+
+  FetchContent_Declare(
+    cio
     GIT_REPOSITORY https://github.com/gatzka/cio.git
 #GIT_TAG ec44c6c1675c25b9827aacd08c02433cccde7780
-)
-FetchContent_GetProperties(cio)
-if(NOT cio_POPULATED)
+  )
+  FetchContent_GetProperties(cio)
+  if(NOT cio_POPULATED)
+    message(STATUS "Fetching cio ${cio_REQUIREDVERSION}...")
     FetchContent_Populate(cio)
     add_subdirectory(${cio_SOURCE_DIR}/src/ ${cio_BINARY_DIR})
+  endif()
+  include_directories("${cio_SOURCE_DIR}/include")
 endif()
+
+
+
+
 
 FetchContent_Declare(hs_hash
     GIT_REPOSITORY https://github.com/gatzka/hs_hash.git
