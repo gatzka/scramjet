@@ -30,11 +30,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "cio_eventloop.h"
-#include "cio_server_socket.h"
-#include "cio_socket.h"
-#include "cio_socket_address.h"
-#include "cio_util.h"
+#include "cio/eventloop.h"
+#include "cio/server_socket.h"
+#include "cio/socket.h"
+#include "cio/socket_address.h"
+#include "cio/util.h"
+
 #include "hs_hash.h"
 #include "sclog.h"
 #include "sclog_stderr_sink.h"
