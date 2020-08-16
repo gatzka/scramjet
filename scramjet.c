@@ -36,9 +36,11 @@
 #include "cio/socket_address.h"
 #include "cio/util.h"
 
-#include "hs_hash.h"
-#include "sclog.h"
-#include "sclog_stderr_sink.h"
+#include "hs_hash/hs_hash.h"
+
+#include "sclog/sclog.h"
+#include "sclog/stderr_sink.h"
+
 #include "sj_log.h"
 
 static const uint64_t close_timeout_ns = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);

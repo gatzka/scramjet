@@ -29,7 +29,7 @@
 #ifndef CIO_HTTP_LOCATION_H
 #define CIO_HTTP_LOCATION_H
 
-#include "sclog.h"
+#include "sclog/sclog.h"
 
 #ifdef __cplusplus
 extern "C" {

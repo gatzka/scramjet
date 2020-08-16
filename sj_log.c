@@ -26,7 +26,8 @@
  * SOFTWARE.
  */
 
-#include "sclog.h"
+#include "sclog/sclog.h"
+
 #include "sj_log.h"
 
 struct sclog sj_log;

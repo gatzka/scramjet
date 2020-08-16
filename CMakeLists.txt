@@ -18,23 +18,30 @@ else()
     endif()
 endif()
 
-
-FetchContent_Declare(hs_hash
-    GIT_REPOSITORY https://github.com/gatzka/hs_hash.git
-)
-FetchContent_GetProperties(hs_hash)
-if(NOT hs_hash_POPULATED)
-    FetchContent_Populate(hs_hash)
-    add_subdirectory(${hs_hash_SOURCE_DIR}/ ${hs_hash_BINARY_DIR})
+find_package(hs_hash QUIET)
+if(hs_hash_FOUND)
+    message(STATUS "hs_hash already installed, using it")
+else()
+    message(STATUS "hs_hash not installed, fetching it")
+    FetchContent_Declare(hs_hash
+        GIT_REPOSITORY https://github.com/gatzka/hs_hash.git
+    )
+    FetchContent_MakeAvailable(hs_hash)
 endif()
 
-FetchContent_Declare(sclog
-    GIT_REPOSITORY https://github.com/gatzka/sclog.git
-)
-FetchContent_GetProperties(sclog)
-if(NOT sclog_POPULATED)
-    FetchContent_Populate(sclog)
-    add_subdirectory(${sclog_SOURCE_DIR}/ ${sclog_BINARY_DIR})
+find_package(sclog QUIET)
+if(sclog_FOUND)
+    message(STATUS "sclog already installed, using it")
+else()
+    message(STATUS "sclog not installed, fetching it")
+    FetchContent_Declare(sclog
+        GIT_REPOSITORY https://github.com/gatzka/sclog.git
+    )
+    FetchContent_GetProperties(sclog)
+    if(NOT sclog_POPULATED)
+        FetchContent_Populate(sclog)
+        add_subdirectory(${sclog_SOURCE_DIR}/lib/ ${sclog_BINARY_DIR})
+    endif()
 endif()
 
 add_executable(scramjet
