@@ -56,5 +56,4 @@ set_target_properties(scramjet PROPERTIES
     C_EXTENSIONS OFF
     C_CLANG_TIDY ""
 )
-
-
+install(TARGETS scramjet RUNTIME DESTINATION bin)
