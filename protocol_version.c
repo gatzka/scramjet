@@ -33,6 +33,7 @@
 #include "cio/error_code.h"
 
 #include "jet_client.h"
+#include "messages.h"
 #include "protocol_version.h"
 #include "sj_log.h"
 
@@ -40,7 +41,8 @@ static const uint32_t PROTOCOL_VERSION_MAJOR = UINT32_C(1);
 static const uint32_t PROTOCOL_VERSION_MINOR = UINT32_C(0);
 static const uint32_t PROTOCOL_VERSION_PATCH = UINT32_C(0);
 
-static const uint8_t PROTOCOL_VERSION[12] = {
+static const uint8_t PROTOCOL_VERSION[13] = {
+	(uint8_t)MESSAGE_API_VERSION,
     (uint8_t)(PROTOCOL_VERSION_MAJOR & 0xFF),
     (uint8_t)((PROTOCOL_VERSION_MAJOR >> 8) & 0xFF),
     (uint8_t)((PROTOCOL_VERSION_MAJOR >> 16) & 0xFF),
