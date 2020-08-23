@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "cio/buffered_stream.h"
 #include "cio/eventloop.h"
 #include "cio/server_socket.h"
 #include "cio/socket.h"
@@ -41,15 +42,14 @@
 #include "sclog/sclog.h"
 #include "sclog/stderr_sink.h"
 
+#include "jet_client.h"
+#include "protocol_version.h"
 #include "sj_log.h"
 
-static const uint64_t close_timeout_ns = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
+static const uint64_t close_timeout_ns =
+    UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 enum { SERVERSOCKET_BACKLOG = 5 };
 enum { SERVERSOCKET_LISTEN_PORT = 12345 };
-
-struct jet_client {
-	struct cio_socket socket;
-};
 
 static struct cio_eventloop loop;
 
@@ -71,21 +71,61 @@ static struct cio_socket *alloc_jet_client(void)
 
 static void free_jet_client(struct cio_socket *socket)
 {
-	struct jet_client *client = cio_container_of(socket, struct jet_client, socket);
+	struct jet_client *client =
+	    cio_container_of(socket, struct jet_client, socket);
 	free(client);
 }
 
-static void handle_accept(struct cio_server_socket *ss, void *handler_context, enum cio_error err, struct cio_socket *socket)
+static enum cio_error init_client(struct jet_client *client)
+{
+	enum cio_error err = cio_read_buffer_init(&client->rb, client->buffer, sizeof(client->buffer));
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Failed to initialize read buffer!");
+		goto error;
+	}
+
+	struct cio_io_stream *stream = cio_socket_get_io_stream(&client->socket);
+
+	struct cio_buffered_stream *bs = &client->bs;
+	err = cio_buffered_stream_init(bs, stream);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Failed to initialize buffered stream!");
+		goto error;
+	}
+
+	return CIO_SUCCESS;
+
+error:
+	cio_socket_close(&client->socket);
+	return err;
+}
+
+static void handle_accept(struct cio_server_socket *ss, void *handler_context,
+                          enum cio_error err, struct cio_socket *socket)
 {
 	(void)handler_context;
-	(void)socket;
 
-	if (err != CIO_SUCCESS) {
+	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Error in handle_accept!");
-		cio_server_socket_close(ss);
-		cio_eventloop_cancel(ss->impl.loop);
+		goto error;
+	}
+
+	struct jet_client *client =
+	    cio_container_of(socket, struct jet_client, socket);
+
+	err = init_client(client);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
 		return;
 	}
+
+	//send_protocol_version(client, read_jet_message);
+	send_protocol_version(client, NULL);
+
+	return;
+
+error:
+	cio_server_socket_close(ss);
+	cio_eventloop_cancel(ss->impl.loop);
 }
 
 int main(void)
@@ -110,27 +150,34 @@ int main(void)
 
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
 		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not install signal handler for SIGTERM!");
+		sclog_message(&sj_log, SCLOG_ERROR,
+		              "Could not install signal handler for SIGTERM!");
 		goto err;
 	}
 
 	if (signal(SIGINT, sighandler) == SIG_ERR) {
 		signal(SIGTERM, SIG_DFL);
 		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not install signal handler for SIGINT!");
+		sclog_message(&sj_log, SCLOG_ERROR,
+		              "Could not install signal handler for SIGINT!");
 		goto err;
 	}
 
 	struct cio_socket_address endpoint;
-	err = cio_init_inet_socket_address(&endpoint, cio_get_inet_address_any4(), SERVERSOCKET_LISTEN_PORT);
+	err = cio_init_inet_socket_address(&endpoint, cio_get_inet_address_any4(),
+	                                   SERVERSOCKET_LISTEN_PORT);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not init listen socket address!");
+		sclog_message(&sj_log, SCLOG_ERROR,
+		              "Could not init listen socket address!");
 		goto err;
 	}
 
 	struct cio_server_socket ss;
-	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG, cio_socket_address_get_family(&endpoint), alloc_jet_client, free_jet_client, close_timeout_ns, NULL);
+	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG,
+	                             cio_socket_address_get_family(&endpoint),
+	                             alloc_jet_client, free_jet_client,
+	                             close_timeout_ns, NULL);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not init server socket!");
@@ -147,7 +194,8 @@ int main(void)
 	err = cio_server_socket_set_reuse_address(&ss, true);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not set reuse address socket option!");
+		sclog_message(&sj_log, SCLOG_ERROR,
+		              "Could not set reuse address socket option!");
 		goto close_socket;
 	}
 
