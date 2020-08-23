@@ -43,6 +43,7 @@
 #include "sclog/stderr_sink.h"
 
 #include "jet_client.h"
+#include "messages.h"
 #include "protocol_version.h"
 #include "sj_log.h"
 
@@ -118,8 +119,7 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context,
 		return;
 	}
 
-	//send_protocol_version(client, read_jet_message);
-	send_protocol_version(client, NULL);
+	send_protocol_version(client, read_jet_message);
 
 	return;
 

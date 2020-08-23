@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) <2020> <Stephan Gatzka>
+ * Copyright (c) <2019> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -26,18 +26,22 @@
  * SOFTWARE.
  */
 
-#ifndef SCRAMJET_MESSAGES_H
-#define SCRAMJET_MESSAGES_H
-
 #include "cio/buffered_stream.h"
+#include "cio/compiler.h"
 #include "cio/error_code.h"
 
-enum jet_message {
-    MESSAGE_API_VERSION = 1,
-    MESSAGE_REQUEST = 2,
-    MESSAGE_RESPONSE = 3
-};
+#include "jet_client.h"
+#include "messages.h"
 
-void read_jet_message(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err);
+void read_jet_message(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err)
+{
+	//struct jet_client *client = (struct jet_client *)handler_context;
+    (void)handler_context;
 
-#endif
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	cio_buffered_stream_close(bs);
+}

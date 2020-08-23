@@ -52,6 +52,7 @@ endif()
 
 add_executable(scramjet
     jet_client.h
+    messages.c
     messages.h
     protocol_version.c
     protocol_version.h
