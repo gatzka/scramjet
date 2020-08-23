@@ -1,0 +1,11 @@
+{
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        ".h": "c"
+    },
+    "editor.renderWhitespace": "all",
+    "cmake.preferredGenerators":[
+        "Ninja",
+        "Unix Makefiles"
+    ]
+}
