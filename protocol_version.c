@@ -26,13 +26,46 @@
  * SOFTWARE.
  */
 
+#include <stdint.h>
+
 #include "cio/buffered_stream.h"
+#include "cio/compiler.h"
+#include "cio/error_code.h"
 
 #include "jet_client.h"
 #include "protocol_version.h"
+#include "sj_log.h"
+
+static const uint32_t PROTOCOL_VERSION_MAJOR = UINT32_C(1);
+static const uint32_t PROTOCOL_VERSION_MINOR = UINT32_C(0);
+static const uint32_t PROTOCOL_VERSION_PATCH = UINT32_C(0);
+
+static const uint8_t PROTOCOL_VERSION[12] = {
+    (uint8_t)(PROTOCOL_VERSION_MAJOR & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 8) & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 16) & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 24) & 0xFF),
+
+    (uint8_t)(PROTOCOL_VERSION_MINOR & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_MINOR >> 8) & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_MINOR >> 16) & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_MINOR >> 24) & 0xFF),
+
+    (uint8_t)(PROTOCOL_VERSION_PATCH & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_PATCH >> 8) & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_PATCH >> 16) & 0xFF),
+    (uint8_t)((PROTOCOL_VERSION_PATCH >> 24) & 0xFF),
+};
 
 void send_protocol_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler)
 {
-	(void)client;
-	(void)handler;
+	cio_write_buffer_head_init(&client->wbh);
+	cio_write_buffer_const_element_init(&client->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
+	cio_write_buffer_queue_tail(&client->wbh, &client->wb);
+
+	enum cio_error err = cio_buffered_stream_write(&client->bs, &client->wbh, handler, client);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not send protocol version information to client!");
+		cio_buffered_stream_close(&client->bs);
+	}
 }

@@ -40,6 +40,8 @@ enum { BUFFER_SIZE = 128 };
 struct jet_client {
 	struct cio_socket socket;
 	struct cio_read_buffer rb;
+	struct cio_write_buffer wb;
+	struct cio_write_buffer wbh;
 	struct cio_buffered_stream bs;
 	uint8_t buffer[BUFFER_SIZE];
 };
