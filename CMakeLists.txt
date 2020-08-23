@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.14)
-project(scramjet C)
 
 include(FetchContent)
 
@@ -8,6 +7,10 @@ FetchContent_Declare(GatzkaToolchainFiles
     SOURCE_DIR ${CMAKE_BINARY_DIR}/toolchains
 )
 FetchContent_MakeAvailable(GatzkaToolchainFiles)
+
+project(scramjet C)
+
+include(CTest)
 
 find_package(cio QUIET)
 if(cio_FOUND)
