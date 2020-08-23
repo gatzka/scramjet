@@ -1,7 +1,13 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.14)
 project(scramjet C)
 
 include(FetchContent)
+
+FetchContent_Declare(GatzkaToolchainFiles
+    GIT_REPOSITORY https://github.com/gatzka/cmake-toolchain-files.git
+    SOURCE_DIR ${CMAKE_BINARY_DIR}/toolchains
+)
+FetchContent_MakeAvailable(GatzkaToolchainFiles)
 
 find_package(cio QUIET)
 if(cio_FOUND)
