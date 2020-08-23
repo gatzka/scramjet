@@ -26,8 +26,8 @@
  * SOFTWARE.
  */
 
-#ifndef SCRAMJET_PROTOCOL_VERSION
-#define SCRAMJET_PROTOCOL_VERSION
+#ifndef SCRAMJET_PROTOCOL_VERSION_H
+#define SCRAMJET_PROTOCOL_VERSION_H
 
 #include "cio/buffered_stream.h"
 

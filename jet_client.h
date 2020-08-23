@@ -26,8 +26,8 @@
  * SOFTWARE.
  */
 
-#ifndef SCRAMJET_CLIENT
-#define SCRAMJET_CLIENT
+#ifndef SCRAMJET_CLIENT_H
+#define SCRAMJET_CLIENT_H
 
 #include <stdint.h>
 
