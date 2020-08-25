@@ -41,7 +41,7 @@ static const uint32_t API_VERSION_MAJOR = UINT32_C(1);
 static const uint32_t API_VERSION_MINOR = UINT32_C(0);
 static const uint32_t API_VERSION_PATCH = UINT32_C(0);
 
-static const uint8_t PROTOCOL_VERSION[13] = {
+static const uint8_t API_VERSION[13] = {
 	(uint8_t)MESSAGE_API_VERSION,
     (uint8_t)(API_VERSION_MAJOR & 0xFF),
     (uint8_t)((API_VERSION_MAJOR >> 8) & 0xFF),
@@ -62,7 +62,7 @@ static const uint8_t PROTOCOL_VERSION[13] = {
 void send_api_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler)
 {
 	cio_write_buffer_head_init(&client->wbh);
-	cio_write_buffer_const_element_init(&client->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
+	cio_write_buffer_const_element_init(&client->wb, API_VERSION, sizeof(API_VERSION));
 	cio_write_buffer_queue_tail(&client->wbh, &client->wb);
 
 	enum cio_error err = cio_buffered_stream_write(&client->bs, &client->wbh, handler, client);
