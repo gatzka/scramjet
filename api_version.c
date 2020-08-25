@@ -67,7 +67,7 @@ void send_api_version(struct jet_client *client, cio_buffered_stream_write_handl
 
 	enum cio_error err = cio_buffered_stream_write(&client->bs, &client->wbh, handler, client);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not send protocol version information to client!");
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not send api version information to client!");
 		cio_buffered_stream_close(&client->bs);
 	}
 }
