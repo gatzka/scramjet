@@ -37,26 +37,26 @@
 #include "api_version.h"
 #include "sj_log.h"
 
-static const uint32_t PROTOCOL_VERSION_MAJOR = UINT32_C(1);
-static const uint32_t PROTOCOL_VERSION_MINOR = UINT32_C(0);
-static const uint32_t PROTOCOL_VERSION_PATCH = UINT32_C(0);
+static const uint32_t API_VERSION_MAJOR = UINT32_C(1);
+static const uint32_t API_VERSION_MINOR = UINT32_C(0);
+static const uint32_t API_VERSION_PATCH = UINT32_C(0);
 
 static const uint8_t PROTOCOL_VERSION[13] = {
 	(uint8_t)MESSAGE_API_VERSION,
-    (uint8_t)(PROTOCOL_VERSION_MAJOR & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 8) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 16) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 24) & 0xFF),
+    (uint8_t)(API_VERSION_MAJOR & 0xFF),
+    (uint8_t)((API_VERSION_MAJOR >> 8) & 0xFF),
+    (uint8_t)((API_VERSION_MAJOR >> 16) & 0xFF),
+    (uint8_t)((API_VERSION_MAJOR >> 24) & 0xFF),
 
-    (uint8_t)(PROTOCOL_VERSION_MINOR & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MINOR >> 8) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MINOR >> 16) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MINOR >> 24) & 0xFF),
+    (uint8_t)(API_VERSION_MINOR & 0xFF),
+    (uint8_t)((API_VERSION_MINOR >> 8) & 0xFF),
+    (uint8_t)((API_VERSION_MINOR >> 16) & 0xFF),
+    (uint8_t)((API_VERSION_MINOR >> 24) & 0xFF),
 
-    (uint8_t)(PROTOCOL_VERSION_PATCH & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_PATCH >> 8) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_PATCH >> 16) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_PATCH >> 24) & 0xFF),
+    (uint8_t)(API_VERSION_PATCH & 0xFF),
+    (uint8_t)((API_VERSION_PATCH >> 8) & 0xFF),
+    (uint8_t)((API_VERSION_PATCH >> 16) & 0xFF),
+    (uint8_t)((API_VERSION_PATCH >> 24) & 0xFF),
 };
 
 void send_api_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler)

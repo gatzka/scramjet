@@ -54,11 +54,11 @@ else()
 endif()
 
 add_executable(scramjet
+    api_version.c
+    api_version.h
     jet_client.h
     messages.c
     messages.h
-    protocol_version.c
-    protocol_version.h
     scramjet.c
     sj_log.c
 )
