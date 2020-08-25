@@ -44,7 +44,7 @@
 
 #include "jet_client.h"
 #include "messages.h"
-#include "protocol_version.h"
+#include "api_version.h"
 #include "sj_log.h"
 
 static const uint64_t close_timeout_ns =
@@ -119,7 +119,7 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context,
 		return;
 	}
 
-	send_protocol_version(client, read_jet_message);
+	send_api_version(client, read_jet_message);
 
 	return;
 

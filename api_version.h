@@ -33,6 +33,6 @@
 
 #include "jet_client.h"
 
-void send_protocol_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler);
+void send_api_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler);
 
 #endif

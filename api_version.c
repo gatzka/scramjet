@@ -34,7 +34,7 @@
 
 #include "jet_client.h"
 #include "messages.h"
-#include "protocol_version.h"
+#include "api_version.h"
 #include "sj_log.h"
 
 static const uint32_t PROTOCOL_VERSION_MAJOR = UINT32_C(1);
@@ -59,7 +59,7 @@ static const uint8_t PROTOCOL_VERSION[13] = {
     (uint8_t)((PROTOCOL_VERSION_PATCH >> 24) & 0xFF),
 };
 
-void send_protocol_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler)
+void send_api_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler)
 {
 	cio_write_buffer_head_init(&client->wbh);
 	cio_write_buffer_const_element_init(&client->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
