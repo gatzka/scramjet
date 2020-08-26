@@ -59,6 +59,8 @@ add_executable(scramjet
     messages.h
     protocol_version.c
     protocol_version.h
+    request.c
+    request.h
     scramjet.c
     sj_log.c
 )

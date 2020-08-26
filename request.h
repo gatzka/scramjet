@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) <2019> <Stephan Gatzka>
+ * Copyright (c) <2020> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -26,25 +26,11 @@
  * SOFTWARE.
  */
 
-#ifndef SCRAMJET_CLIENT_H
-#define SCRAMJET_CLIENT_H
+#ifndef SCRAMJET_REQUEST_H
+#define SCRAMJET_REQUEST_H
 
-#include <stdint.h>
+#include "jet_client.h"
 
-#include "cio/buffered_stream.h"
-#include "cio/read_buffer.h"
-#include "cio/socket.h"
-
-enum { BUFFER_SIZE = 128 };
-
-struct jet_client {
-	struct cio_socket socket;
-	struct cio_read_buffer rb;
-	struct cio_write_buffer wb;
-	struct cio_write_buffer wbh;
-	struct cio_buffered_stream bs;
-	uint32_t request_id;
-	uint8_t buffer[BUFFER_SIZE];
-};
+void handle_request(struct jet_client *client);
 
 #endif
