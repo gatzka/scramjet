@@ -42,7 +42,7 @@ static const uint32_t PROTOCOL_VERSION_MINOR = UINT32_C(0);
 static const uint32_t PROTOCOL_VERSION_PATCH = UINT32_C(0);
 
 static const uint8_t PROTOCOL_VERSION[13] = {
-	(uint8_t)MESSAGE_API_VERSION,
+	(uint8_t)MESSAGE_PROTOCOL_VERSION,
     (uint8_t)(PROTOCOL_VERSION_MAJOR & 0xFF),
     (uint8_t)((PROTOCOL_VERSION_MAJOR >> 8) & 0xFF),
     (uint8_t)((PROTOCOL_VERSION_MAJOR >> 16) & 0xFF),

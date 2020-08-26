@@ -33,7 +33,7 @@
 #include "cio/error_code.h"
 
 enum jet_message {
-    MESSAGE_API_VERSION = 1,
+    MESSAGE_PROTOCOL_VERSION = 1,
     MESSAGE_REQUEST = 2,
     MESSAGE_RESPONSE = 3
 };
