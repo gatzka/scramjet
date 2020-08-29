@@ -60,12 +60,19 @@ static void sighandler(int signum)
 	cio_eventloop_cancel(&loop);
 }
 
+static void shutdown_socket_client(struct jet_client *client)
+{
+	cio_buffered_stream_close(&client->bs);
+}
+
 static struct cio_socket *alloc_jet_client(void)
 {
 	struct jet_client *client = malloc(sizeof(*client));
 	if (cio_unlikely(client == NULL)) {
 		return NULL;
 	}
+
+	client->shutdown_peer = shutdown_socket_client;
 
 	return &client->socket;
 }

@@ -50,6 +50,7 @@ struct jet_client {
 	size_t key_length;
 	size_t value_length;
 	char *key;
+	void (*shutdown_peer)(struct jet_client *client);
 };
 
 #endif
