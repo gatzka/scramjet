@@ -54,8 +54,8 @@ else()
 endif()
 
 add_executable(scramjet
-    jet_client.h
     jet_error.h
+    jet_peer.h
     messages.c
     messages.h
     protocol_version.c

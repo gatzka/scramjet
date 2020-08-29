@@ -29,9 +29,9 @@
 #ifndef SCRAMJET_RESPONSE_H
 #define SCRAMJET_RESPONSE_H
 
-#include "jet_client.h"
+#include "jet_peer.h"
 #include "jet_error.h"
 
-void send_response(struct jet_client *client, enum jet_error error);
+void send_response(struct jet_peer *peer, enum jet_error error);
 
 #endif

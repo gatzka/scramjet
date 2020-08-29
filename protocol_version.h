@@ -31,8 +31,8 @@
 
 #include "cio/buffered_stream.h"
 
-#include "jet_client.h"
+#include "jet_peer.h"
 
-void send_protocol_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler);
+void send_protocol_version(struct jet_peer *peer, cio_buffered_stream_write_handler_t handler);
 
 #endif

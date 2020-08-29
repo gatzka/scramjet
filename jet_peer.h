@@ -26,8 +26,8 @@
  * SOFTWARE.
  */
 
-#ifndef SCRAMJET_CLIENT_H
-#define SCRAMJET_CLIENT_H
+#ifndef SCRAMJET_PEER_H
+#define SCRAMJET_PEER_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -38,7 +38,7 @@
 
 enum { BUFFER_SIZE = 128 };
 
-struct jet_client {
+struct jet_peer {
 	struct cio_socket socket;
 	struct cio_read_buffer rb;
 	struct cio_write_buffer wb;
@@ -50,7 +50,7 @@ struct jet_client {
 	size_t key_length;
 	size_t value_length;
 	char *key;
-	void (*shutdown_peer)(struct jet_client *client);
+	void (*shutdown_peer)(struct jet_peer *peer);
 };
 
 #endif

@@ -26,12 +26,12 @@
  * SOFTWARE.
  */
 
-#include "jet_client.h"
-#include "jet_error.h"
 #include "response.h"
+#include "jet_error.h"
+#include "jet_peer.h"
 
-void send_response(struct jet_client *client, enum jet_error error)
+void send_response(struct jet_peer *peer, enum jet_error error)
 {
-    (void)client;
-    (void)error;
+	(void)peer;
+	(void)error;
 }

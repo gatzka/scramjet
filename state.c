@@ -28,17 +28,17 @@
 
 #include <stddef.h>
 
-#include "state.h"
-#include "jet_client.h"
 #include "jet_error.h"
+#include "jet_peer.h"
+#include "state.h"
 
-enum jet_error add_state(struct jet_client *client, size_t key_length, const char *key, size_t value_length, const char *value)
+enum jet_error add_state(struct jet_peer *peer, size_t key_length, const char *key, size_t value_length, const char *value)
 {
-    (void)client;
-    (void)key_length;
-    (void)key;
-    (void)value_length;
-    (void)value;
+	(void)peer;
+	(void)key_length;
+	(void)key;
+	(void)value_length;
+	(void)value;
 
-    return JET_NO_ERROR;
+	return JET_NO_ERROR;
 }

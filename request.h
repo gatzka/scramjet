@@ -29,8 +29,8 @@
 #ifndef SCRAMJET_REQUEST_H
 #define SCRAMJET_REQUEST_H
 
-#include "jet_client.h"
+#include "jet_peer.h"
 
-void handle_request(struct jet_client *client);
+void handle_request(struct jet_peer *peer);
 
 #endif

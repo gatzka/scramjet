@@ -32,7 +32,7 @@
 #include "cio/compiler.h"
 #include "cio/error_code.h"
 
-#include "jet_client.h"
+#include "jet_peer.h"
 #include "messages.h"
 #include "protocol_version.h"
 #include "sj_log.h"
@@ -59,15 +59,15 @@ static const uint8_t PROTOCOL_VERSION[13] = {
     (uint8_t)((PROTOCOL_VERSION_PATCH >> 24) & 0xFF),
 };
 
-void send_protocol_version(struct jet_client *client, cio_buffered_stream_write_handler_t handler)
+void send_protocol_version(struct jet_peer *peer, cio_buffered_stream_write_handler_t handler)
 {
-	cio_write_buffer_head_init(&client->wbh);
-	cio_write_buffer_const_element_init(&client->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
-	cio_write_buffer_queue_tail(&client->wbh, &client->wb);
+	cio_write_buffer_head_init(&peer->wbh);
+	cio_write_buffer_const_element_init(&peer->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
+	cio_write_buffer_queue_tail(&peer->wbh, &peer->wb);
 
-	enum cio_error err = cio_buffered_stream_write(&client->bs, &client->wbh, handler, client);
+	enum cio_error err = cio_buffered_stream_write(&peer->bs, &peer->wbh, handler, peer);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not send protocol version information to client!");
-		cio_buffered_stream_close(&client->bs);
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not send protocol version information to peer!");
+        peer->shutdown_peer(peer);
 	}
 }

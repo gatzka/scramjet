@@ -42,7 +42,7 @@
 #include "sclog/sclog.h"
 #include "sclog/stderr_sink.h"
 
-#include "jet_client.h"
+#include "jet_peer.h"
 #include "messages.h"
 #include "protocol_version.h"
 #include "sj_log.h"
@@ -60,41 +60,41 @@ static void sighandler(int signum)
 	cio_eventloop_cancel(&loop);
 }
 
-static void shutdown_socket_client(struct jet_client *client)
+static void shutdown_socket_peer(struct jet_peer *peer)
 {
-	cio_buffered_stream_close(&client->bs);
+	cio_buffered_stream_close(&peer->bs);
 }
 
-static struct cio_socket *alloc_jet_client(void)
+static struct cio_socket *alloc_socket_jet_peer(void)
 {
-	struct jet_client *client = malloc(sizeof(*client));
-	if (cio_unlikely(client == NULL)) {
+	struct jet_peer *peer = malloc(sizeof(*peer));
+	if (cio_unlikely(peer == NULL)) {
 		return NULL;
 	}
 
-	client->shutdown_peer = shutdown_socket_client;
+	peer->shutdown_peer = shutdown_socket_peer;
 
-	return &client->socket;
+	return &peer->socket;
 }
 
-static void free_jet_client(struct cio_socket *socket)
+static void free_socket_jet_peer(struct cio_socket *socket)
 {
-	struct jet_client *client =
-	    cio_container_of(socket, struct jet_client, socket);
-	free(client);
+	struct jet_peer *peer =
+	    cio_container_of(socket, struct jet_peer, socket);
+	free(peer);
 }
 
-static enum cio_error init_client(struct jet_client *client)
+static enum cio_error init_socket_peer(struct jet_peer *peer)
 {
-	enum cio_error err = cio_read_buffer_init(&client->rb, client->buffer, sizeof(client->buffer));
+	enum cio_error err = cio_read_buffer_init(&peer->rb, peer->buffer, sizeof(peer->buffer));
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Failed to initialize read buffer!");
 		goto error;
 	}
 
-	struct cio_io_stream *stream = cio_socket_get_io_stream(&client->socket);
+	struct cio_io_stream *stream = cio_socket_get_io_stream(&peer->socket);
 
-	struct cio_buffered_stream *bs = &client->bs;
+	struct cio_buffered_stream *bs = &peer->bs;
 	err = cio_buffered_stream_init(bs, stream);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Failed to initialize buffered stream!");
@@ -104,7 +104,7 @@ static enum cio_error init_client(struct jet_client *client)
 	return CIO_SUCCESS;
 
 error:
-	cio_socket_close(&client->socket);
+	cio_socket_close(&peer->socket);
 	return err;
 }
 
@@ -118,15 +118,15 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context,
 		goto error;
 	}
 
-	struct jet_client *client =
-	    cio_container_of(socket, struct jet_client, socket);
+	struct jet_peer *peer =
+	    cio_container_of(socket, struct jet_peer, socket);
 
-	err = init_client(client);
+	err = init_socket_peer(peer);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		return;
 	}
 
-	send_protocol_version(client, read_jet_message);
+	send_protocol_version(peer, read_jet_message);
 
 	return;
 
@@ -183,7 +183,7 @@ int main(void)
 	struct cio_server_socket ss;
 	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG,
 	                             cio_socket_address_get_family(&endpoint),
-	                             alloc_jet_client, free_jet_client,
+	                             alloc_socket_jet_peer, free_socket_jet_peer,
 	                             close_timeout_ns, NULL);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
