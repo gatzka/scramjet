@@ -31,16 +31,139 @@
 
 #include "cio/buffered_stream.h"
 #include "cio/compiler.h"
+#include "cio/endian.h"
 #include "cio/error_code.h"
 #include "cio/read_buffer.h"
 
+#include "jet_error.h"
 #include "jet_function.h"
 #include "request.h"
+#include "response.h"
 #include "sj_log.h"
+#include "state.h"
+
+static void value_read(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err, struct cio_read_buffer *buffer, size_t num_bytes)
+{
+	(void)num_bytes;
+
+	if (cio_unlikely(err == CIO_EOF)) {
+		sclog_message(&sj_log, SCLOG_INFO, "connection closed by client!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "reading value failed!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	struct jet_client *client = (struct jet_client *)handler_context;
+	char *value = client->key + client->key_length + 4;
+
+	enum jet_error jet_error = add_state(client, client->key_length, client->key, client->value_length, value);
+
+	cio_read_buffer_consume(buffer, client->key_length);
+	cio_read_buffer_consume(buffer, 4);
+	cio_read_buffer_consume(buffer, client->value_length);
+
+	send_response(client, jet_error);
+}
+
+static void value_length_read(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err, struct cio_read_buffer *buffer, size_t num_bytes)
+{
+	(void)num_bytes;
+
+	if (cio_unlikely(err == CIO_EOF)) {
+		sclog_message(&sj_log, SCLOG_INFO, "connection closed by client!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "reading key failed!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	uint32_t value_length;
+	memcpy(&value_length, cio_read_buffer_get_read_ptr(buffer), sizeof(value_length));
+	value_length = cio_le32toh(value_length);
+
+	struct jet_client *client = (struct jet_client *)handler_context;
+	client->value_length = value_length;
+
+	err = cio_buffered_stream_read_at_least(&client->bs, &client->rb, value_length, value_read, client);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not start reading value!");
+		cio_buffered_stream_close(&client->bs);
+	}
+}
+
+static void key_read(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err, struct cio_read_buffer *buffer, size_t num_bytes)
+{
+	(void)num_bytes;
+
+	if (cio_unlikely(err == CIO_EOF)) {
+		sclog_message(&sj_log, SCLOG_INFO, "connection closed by client!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "reading key failed!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	struct jet_client *client = (struct jet_client *)handler_context;
+	client->key = (char *)cio_read_buffer_get_read_ptr(buffer);
+
+	err = cio_buffered_stream_read_at_least(&client->bs, &client->rb, 4, value_length_read, client);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not start reading value length!");
+		cio_buffered_stream_close(&client->bs);
+	}
+}
+
+static void key_length_read(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err, struct cio_read_buffer *buffer, size_t num_bytes)
+{
+	(void)num_bytes;
+
+	if (cio_unlikely(err == CIO_EOF)) {
+		sclog_message(&sj_log, SCLOG_INFO, "connection closed by client!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "reading key length failed!");
+		cio_buffered_stream_close(bs);
+		return;
+	}
+
+	uint16_t key_length;
+	memcpy(&key_length, cio_read_buffer_get_read_ptr(buffer), sizeof(key_length));
+	key_length = cio_le16toh(key_length);
+
+	struct jet_client *client = (struct jet_client *)handler_context;
+	client->key_length = key_length;
+	cio_read_buffer_consume(buffer, sizeof(key_length));
+
+	err = cio_buffered_stream_read_at_least(&client->bs, &client->rb, key_length, key_read, client);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not start reading key!");
+		cio_buffered_stream_close(&client->bs);
+	}
+}
 
 static void handle_add_state(struct jet_client *client)
 {
-	(void)client;
+	enum cio_error err = cio_buffered_stream_read_at_least(&client->bs, &client->rb, 2, key_length_read, client);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not start reading key length!");
+		cio_buffered_stream_close(&client->bs);
+	}
 }
 
 static void handle_remove_state(struct jet_client *client)

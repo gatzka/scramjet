@@ -55,14 +55,19 @@ endif()
 
 add_executable(scramjet
     jet_client.h
+    jet_error.h
     messages.c
     messages.h
     protocol_version.c
     protocol_version.h
     request.c
     request.h
+    response.c
+    response.h
     scramjet.c
     sj_log.c
+    state.c
+    state.h
 )
 target_link_libraries(scramjet cio::cio)
 target_link_libraries(scramjet hs_hash::hs_hash)
