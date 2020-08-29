@@ -29,6 +29,8 @@
 #ifndef SCRAMJET_MESSAGES_H
 #define SCRAMJET_MESSAGES_H
 
+#include <stdint.h>
+
 #include "cio/buffered_stream.h"
 #include "cio/error_code.h"
 
@@ -38,6 +40,6 @@ enum jet_message {
     MESSAGE_RESPONSE = 3
 };
 
-void read_jet_message(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err);
+void handle_message(uint8_t *message, uint32_t message_length);
 
 #endif

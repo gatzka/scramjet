@@ -66,6 +66,8 @@ add_executable(scramjet
     response.h
     scramjet.c
     sj_log.c
+    socket_peer.c
+    socket_peer.h
     state.c
     state.h
 )

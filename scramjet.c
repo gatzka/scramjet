@@ -32,9 +32,7 @@
 
 #include "cio/buffered_stream.h"
 #include "cio/eventloop.h"
-#include "cio/server_socket.h"
 #include "cio/socket.h"
-#include "cio/socket_address.h"
 #include "cio/util.h"
 
 #include "hs_hash/hs_hash.h"
@@ -47,92 +45,12 @@
 #include "protocol_version.h"
 #include "sj_log.h"
 
-static const uint64_t close_timeout_ns =
-    UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
-enum { SERVERSOCKET_BACKLOG = 5 };
-enum { SERVERSOCKET_LISTEN_PORT = 12345 };
-
 static struct cio_eventloop loop;
 
 static void sighandler(int signum)
 {
 	(void)signum;
 	cio_eventloop_cancel(&loop);
-}
-
-static void shutdown_socket_peer(struct jet_peer *peer)
-{
-	cio_buffered_stream_close(&peer->bs);
-}
-
-static struct cio_socket *alloc_socket_jet_peer(void)
-{
-	struct jet_peer *peer = malloc(sizeof(*peer));
-	if (cio_unlikely(peer == NULL)) {
-		return NULL;
-	}
-
-	peer->shutdown_peer = shutdown_socket_peer;
-
-	return &peer->socket;
-}
-
-static void free_socket_jet_peer(struct cio_socket *socket)
-{
-	struct jet_peer *peer =
-	    cio_container_of(socket, struct jet_peer, socket);
-	free(peer);
-}
-
-static enum cio_error init_socket_peer(struct jet_peer *peer)
-{
-	enum cio_error err = cio_read_buffer_init(&peer->rb, peer->buffer, sizeof(peer->buffer));
-	if (cio_unlikely(err != CIO_SUCCESS)) {
-		sclog_message(&sj_log, SCLOG_ERROR, "Failed to initialize read buffer!");
-		goto error;
-	}
-
-	struct cio_io_stream *stream = cio_socket_get_io_stream(&peer->socket);
-
-	struct cio_buffered_stream *bs = &peer->bs;
-	err = cio_buffered_stream_init(bs, stream);
-	if (cio_unlikely(err != CIO_SUCCESS)) {
-		sclog_message(&sj_log, SCLOG_ERROR, "Failed to initialize buffered stream!");
-		goto error;
-	}
-
-	return CIO_SUCCESS;
-
-error:
-	cio_socket_close(&peer->socket);
-	return err;
-}
-
-static void handle_accept(struct cio_server_socket *ss, void *handler_context,
-                          enum cio_error err, struct cio_socket *socket)
-{
-	(void)handler_context;
-
-	if (cio_unlikely(err != CIO_SUCCESS)) {
-		sclog_message(&sj_log, SCLOG_ERROR, "Error in handle_accept!");
-		goto error;
-	}
-
-	struct jet_peer *peer =
-	    cio_container_of(socket, struct jet_peer, socket);
-
-	err = init_socket_peer(peer);
-	if (cio_unlikely(err != CIO_SUCCESS)) {
-		return;
-	}
-
-	send_protocol_version(peer, read_jet_message);
-
-	return;
-
-error:
-	cio_server_socket_close(ss);
-	cio_eventloop_cancel(ss->impl.loop);
 }
 
 int main(void)
@@ -170,56 +88,6 @@ int main(void)
 		goto err;
 	}
 
-	struct cio_socket_address endpoint;
-	err = cio_init_inet_socket_address(&endpoint, cio_get_inet_address_any4(),
-	                                   SERVERSOCKET_LISTEN_PORT);
-	if (err != CIO_SUCCESS) {
-		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR,
-		              "Could not init listen socket address!");
-		goto err;
-	}
-
-	struct cio_server_socket ss;
-	err = cio_server_socket_init(&ss, &loop, SERVERSOCKET_BACKLOG,
-	                             cio_socket_address_get_family(&endpoint),
-	                             alloc_socket_jet_peer, free_socket_jet_peer,
-	                             close_timeout_ns, NULL);
-	if (err != CIO_SUCCESS) {
-		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not init server socket!");
-		goto destroy_loop;
-	}
-
-	err = cio_server_socket_set_tcp_fast_open(&ss, true);
-	if (cio_unlikely(err != CIO_SUCCESS)) {
-		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not set TCP NODELAY!");
-		goto close_socket;
-	}
-
-	err = cio_server_socket_set_reuse_address(&ss, true);
-	if (err != CIO_SUCCESS) {
-		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR,
-		              "Could not set reuse address socket option!");
-		goto close_socket;
-	}
-
-	err = cio_server_socket_bind(&ss, &endpoint);
-	if (err != CIO_SUCCESS) {
-		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not bind to socket endpoint!");
-		goto close_socket;
-	}
-
-	err = cio_server_socket_accept(&ss, handle_accept, NULL);
-	if (err != CIO_SUCCESS) {
-		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not accept on server socket!");
-		goto close_socket;
-	}
-
 	sclog_message(&sj_log, SCLOG_INFO, "Starting eventloop!");
 
 	err = cio_eventloop_run(&loop);
@@ -228,8 +96,6 @@ int main(void)
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
 	}
 
-close_socket:
-	cio_server_socket_close(&ss);
 destroy_loop:
 	cio_eventloop_destroy(&loop);
 err:

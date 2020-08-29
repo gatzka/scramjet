@@ -26,14 +26,34 @@
  * SOFTWARE.
  */
 
-#ifndef SCRAMJET_PEER_H
-#define SCRAMJET_PEER_H
+#ifndef SCRAMJET_SOCKET_PEER_H
+#define SCRAMJET_SOCKET_PEER_H
 
 #include <stddef.h>
-#include <stdint.h>
 
-struct jet_peer {
-	void (*shutdown_peer)(struct jet_peer *peer);
+#include "cio/buffered_stream.h"
+#include "cio/eventloop.h"
+#include "cio/read_buffer.h"
+#include "cio/server_socket.h"
+#include "cio/socket.h"
+
+#include "jet_peer.h"
+
+// TODO(gatzka): make BUFFER_SIZE configurable via cmake.
+enum { BUFFER_SIZE = 128 };
+
+struct socket_peer {
+	struct jet_peer peer;
+
+	uint32_t message_length;
+	struct cio_socket socket;
+	struct cio_read_buffer rb;
+	struct cio_write_buffer wb;
+	struct cio_write_buffer wbh;
+	struct cio_buffered_stream bs;
+	uint8_t buffer[BUFFER_SIZE];
 };
+
+enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, struct cio_eventloop *loop);
 
 #endif
