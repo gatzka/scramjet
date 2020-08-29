@@ -30,20 +30,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "cio/buffered_stream.h"
 #include "cio/eventloop.h"
-#include "cio/socket.h"
-#include "cio/util.h"
-
-#include "hs_hash/hs_hash.h"
+#include "cio/server_socket.h"
 
 #include "sclog/sclog.h"
 #include "sclog/stderr_sink.h"
 
-#include "jet_peer.h"
-#include "messages.h"
-#include "protocol_version.h"
 #include "sj_log.h"
+#include "socket_peer.h"
 
 static struct cio_eventloop loop;
 
@@ -70,14 +64,14 @@ int main(void)
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not init eventloop!");
-		goto err;
+		goto close_log;
 	}
 
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
 		ret = EXIT_FAILURE;
 		sclog_message(&sj_log, SCLOG_ERROR,
 		              "Could not install signal handler for SIGTERM!");
-		goto err;
+		goto destroy_loop;
 	}
 
 	if (signal(SIGINT, sighandler) == SIG_ERR) {
@@ -85,7 +79,15 @@ int main(void)
 		ret = EXIT_FAILURE;
 		sclog_message(&sj_log, SCLOG_ERROR,
 		              "Could not install signal handler for SIGINT!");
-		goto err;
+		goto destroy_loop;
+	}
+
+	struct cio_server_socket ipv4_ss;
+	err = prepare_socket_peer_connection(&ipv4_ss, &loop);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
+		goto destroy_loop;
 	}
 
 	sclog_message(&sj_log, SCLOG_INFO, "Starting eventloop!");
@@ -98,7 +100,8 @@ int main(void)
 
 destroy_loop:
 	cio_eventloop_destroy(&loop);
-err:
+
+close_log:
 	sclog_close(&sj_log);
 
 	return ret;

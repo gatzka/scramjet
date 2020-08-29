@@ -103,7 +103,7 @@ static void message_length_read(struct cio_buffered_stream *bs, void *handler_co
 	}
 }
 
-void read_jet_message(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err)
+static void read_jet_message(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err)
 {
 	struct jet_peer *jet_peer = (struct jet_peer *)handler_context;
 	struct socket_peer *peer =
@@ -129,6 +129,16 @@ static void shutdown_socket_peer(struct jet_peer *jet_peer)
 	cio_buffered_stream_close(&peer->bs);
 }
 
+static enum cio_error send_message_socket_peer(struct jet_peer *jet_peer, cio_buffered_stream_write_handler_t handler)
+{
+	struct socket_peer *peer =
+	    cio_container_of(jet_peer, struct socket_peer, peer);
+	peer->write_message_length = (uint32_t)jet_peer->wbh.data.head.total_length;
+	cio_write_buffer_const_element_init(&peer->wb, &peer->write_message_length, sizeof(peer->write_message_length));
+	cio_write_buffer_queue_head(&jet_peer->wbh, &peer->wb);
+	return cio_buffered_stream_write(&peer->bs, &jet_peer->wbh, handler, jet_peer);
+}
+
 static struct cio_socket *alloc_socket_jet_peer(void)
 {
 	struct socket_peer *peer = malloc(sizeof(*peer));
@@ -137,6 +147,7 @@ static struct cio_socket *alloc_socket_jet_peer(void)
 	}
 
 	peer->peer.shutdown_peer = shutdown_socket_peer;
+	peer->peer.send_message = send_message_socket_peer;
 
 	return &peer->socket;
 }

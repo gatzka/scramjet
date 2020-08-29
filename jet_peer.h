@@ -32,8 +32,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "cio/buffered_stream.h"
+#include "cio/error_code.h"
+#include "cio/write_buffer.h"
+
 struct jet_peer {
+	struct cio_write_buffer wb;
+	struct cio_write_buffer wbh;
 	void (*shutdown_peer)(struct jet_peer *peer);
+	enum cio_error (*send_message)(struct jet_peer *peer, cio_buffered_stream_write_handler_t handler);
 };
+
+void close_jet_peer(struct jet_peer *peer);
 
 #endif

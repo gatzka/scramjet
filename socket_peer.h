@@ -36,6 +36,7 @@
 #include "cio/read_buffer.h"
 #include "cio/server_socket.h"
 #include "cio/socket.h"
+#include "cio/write_buffer.h"
 
 #include "jet_peer.h"
 
@@ -49,7 +50,7 @@ struct socket_peer {
 	struct cio_socket socket;
 	struct cio_read_buffer rb;
 	struct cio_write_buffer wb;
-	struct cio_write_buffer wbh;
+	uint32_t write_message_length;
 	struct cio_buffered_stream bs;
 	uint8_t buffer[BUFFER_SIZE];
 };

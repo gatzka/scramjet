@@ -55,6 +55,7 @@ endif()
 
 add_executable(scramjet
     jet_error.h
+    jet_peer.c
     jet_peer.h
     messages.c
     messages.h
