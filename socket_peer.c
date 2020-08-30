@@ -46,6 +46,9 @@
 static const uint64_t close_timeout_ns =
     UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 enum { SERVERSOCKET_BACKLOG = 5 };
+static const unsigned int KEEP_ALIVE_IDLE_S = 12;
+static const unsigned int KEEP_ALIVE_INTERVAL_S = 3;
+static const unsigned int KEEP_ALIVE_CNT = 2;
 
 static void message_read(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err, struct cio_read_buffer *buffer, size_t num_bytes)
 {
@@ -202,7 +205,7 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context,
 			return;
 		}
 
-		err = cio_socket_set_keep_alive(socket, true, 12, 3, 2);
+		err = cio_socket_set_keep_alive(socket, true, KEEP_ALIVE_IDLE_S, KEEP_ALIVE_INTERVAL_S, KEEP_ALIVE_CNT);
 		if (cio_unlikely(err != CIO_SUCCESS)) {
 			sclog_message(&sj_log, SCLOG_ERROR, "Failed to set socket keep alive!");
 			cio_socket_close(socket);
