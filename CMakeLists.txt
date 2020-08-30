@@ -57,6 +57,7 @@ add_executable(scramjet
     jet_error.h
     jet_peer.c
     jet_peer.h
+    list.h
     messages.c
     messages.h
     protocol_version.c
