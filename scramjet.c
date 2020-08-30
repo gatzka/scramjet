@@ -33,6 +33,7 @@
 #include "cio/eventloop.h"
 #include "cio/server_socket.h"
 #include "cio/socket_address.h"
+#include "cio/unix_address.h"
 
 #include "sclog/sclog.h"
 #include "sclog/stderr_sink.h"
@@ -90,7 +91,7 @@ int main(void)
 	                                   SERVERSOCKET_LISTEN_PORT);
 	if (err != CIO_SUCCESS) {
 		sclog_message(&sj_log, SCLOG_ERROR,
-		              "Could not init listen socket address!");
+		              "Could not init IPv4 listen socket address!");
 		goto destroy_loop;
 	}
 
@@ -98,7 +99,7 @@ int main(void)
 	err = prepare_socket_peer_connection(&ipv4_ss, &ipv4_endpoint, &loop);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not setup IPv4 server socket!");
 		goto destroy_loop;
 	}
 
@@ -107,7 +108,7 @@ int main(void)
 	                                   SERVERSOCKET_LISTEN_PORT);
 	if (err != CIO_SUCCESS) {
 		sclog_message(&sj_log, SCLOG_ERROR,
-		              "Could not init listen socket address!");
+		              "Could not init IPv6 listen socket address!");
 		goto close_ipv4_ss;
 	}
 
@@ -115,7 +116,24 @@ int main(void)
 	err = prepare_socket_peer_connection(&ipv6_ss, &ipv6_endpoint, &loop);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not setup IPv6 server socket!");
+		goto close_ipv4_ss;
+	}
+
+	struct cio_socket_address uds_endpoint;
+	const char path[] = {"\0/tmp/scramjet"};
+	err = cio_init_uds_socket_address(&uds_endpoint, path);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR,
+		              "Could not init UDS listen socket address!");
+		goto close_ipv6_ss;
+	}
+
+	struct cio_server_socket uds_ss;
+	err = prepare_socket_peer_connection(&uds_ss, &uds_endpoint, &loop);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not setup UDS server socket!");
 		goto close_ipv4_ss;
 	}
 
@@ -130,6 +148,7 @@ int main(void)
 	// TODO(gatzka): implement that
 	//destroy_all_peers();
 
+close_ipv6_ss:
 	cio_server_socket_close(&ipv6_ss);
 
 close_ipv4_ss:

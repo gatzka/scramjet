@@ -220,10 +220,13 @@ enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, stru
 		return err;
 	}
 
-	err = cio_server_socket_set_tcp_fast_open(ss, true);
-	if (cio_unlikely(err != CIO_SUCCESS)) {
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not set TCP NODELAY!");
-		goto close_socket;
+	enum cio_address_family family = cio_socket_address_get_family(endpoint);
+	if ((family == CIO_ADDRESS_FAMILY_INET4) || (family == CIO_ADDRESS_FAMILY_INET6)) {
+		err = cio_server_socket_set_tcp_fast_open(ss, true);
+		if (cio_unlikely(err != CIO_SUCCESS)) {
+			sclog_message(&sj_log, SCLOG_ERROR, "Could not set TCP FASTOPEN!");
+			goto close_socket;
+		}
 	}
 
 	err = cio_server_socket_set_reuse_address(ss, true);
