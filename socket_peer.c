@@ -189,7 +189,25 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context,
 
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Error in handle_accept!");
-		goto error;
+		cio_server_socket_close(ss);
+		cio_eventloop_cancel(ss->impl.loop);
+	}
+
+	enum cio_address_family family = cio_socket_get_address_family(socket);
+	if ((family == CIO_ADDRESS_FAMILY_INET4) || (family == CIO_ADDRESS_FAMILY_INET6)) {
+		err = cio_socket_set_tcp_no_delay(socket, true);
+		if (cio_unlikely(err != CIO_SUCCESS)) {
+			sclog_message(&sj_log, SCLOG_ERROR, "Failed to set tcp nodelay!");
+			cio_socket_close(socket);
+			return;
+		}
+
+		err = cio_socket_set_keep_alive(socket, true, 12, 3, 2);
+		if (cio_unlikely(err != CIO_SUCCESS)) {
+			sclog_message(&sj_log, SCLOG_ERROR, "Failed to set socket keep alive!");
+			cio_socket_close(socket);
+			return;
+		}
 	}
 
 	struct socket_peer *peer =
@@ -197,24 +215,19 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context,
 
 	err = init_socket_peer(peer);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
+		cio_socket_close(socket);
 		return;
 	}
 
 	send_protocol_version(&peer->peer, read_jet_message);
-
-	return;
-
-error:
-	cio_server_socket_close(ss);
-	cio_eventloop_cancel(ss->impl.loop);
 }
 
 enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, struct cio_socket_address *endpoint, struct cio_eventloop *loop)
 {
 	enum cio_error err = cio_server_socket_init(ss, loop, SERVERSOCKET_BACKLOG,
-	                             cio_socket_address_get_family(endpoint),
-	                             alloc_socket_jet_peer, free_socket_jet_peer,
-	                             close_timeout_ns, NULL);
+	                                            cio_socket_address_get_family(endpoint),
+	                                            alloc_socket_jet_peer, free_socket_jet_peer,
+	                                            close_timeout_ns, NULL);
 	if (err != CIO_SUCCESS) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not init server socket!");
 		return err;
