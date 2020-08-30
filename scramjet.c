@@ -43,6 +43,12 @@
 
 enum { SERVERSOCKET_LISTEN_PORT = 12345 };
 
+/**
+ * Abstract unix domain socket path is determined by a leading '\0'
+ */
+static const char UDS_PATH[] = {"\0/tmp/scramjet"};
+
+
 static struct cio_eventloop loop;
 
 static void sighandler(int signum)
@@ -121,8 +127,7 @@ int main(void)
 	}
 
 	struct cio_socket_address uds_endpoint;
-	const char path[] = {"\0/tmp/scramjet"};
-	err = cio_init_uds_socket_address(&uds_endpoint, path);
+	err = cio_init_uds_socket_address(&uds_endpoint, UDS_PATH);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR,
 		              "Could not init UDS listen socket address!");
