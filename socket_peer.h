@@ -36,6 +36,7 @@
 #include "cio/read_buffer.h"
 #include "cio/server_socket.h"
 #include "cio/socket.h"
+#include "cio/socket_address.h"
 #include "cio/write_buffer.h"
 
 #include "jet_peer.h"
@@ -55,6 +56,5 @@ struct socket_peer {
 	uint8_t buffer[BUFFER_SIZE];
 };
 
-enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, struct cio_eventloop *loop);
-
+enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, struct cio_socket_address *endpoint, struct cio_eventloop *loop);
 #endif

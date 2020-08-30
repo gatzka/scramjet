@@ -32,12 +32,15 @@
 
 #include "cio/eventloop.h"
 #include "cio/server_socket.h"
+#include "cio/socket_address.h"
 
 #include "sclog/sclog.h"
 #include "sclog/stderr_sink.h"
 
 #include "sj_log.h"
 #include "socket_peer.h"
+
+enum { SERVERSOCKET_LISTEN_PORT = 12345 };
 
 static struct cio_eventloop loop;
 
@@ -82,12 +85,38 @@ int main(void)
 		goto destroy_loop;
 	}
 
+	struct cio_socket_address ipv4_endpoint;
+	err = cio_init_inet_socket_address(&ipv4_endpoint, cio_get_inet_address_any4(),
+	                                   SERVERSOCKET_LISTEN_PORT);
+	if (err != CIO_SUCCESS) {
+		sclog_message(&sj_log, SCLOG_ERROR,
+		              "Could not init listen socket address!");
+		goto destroy_loop;
+	}
+
 	struct cio_server_socket ipv4_ss;
-	err = prepare_socket_peer_connection(&ipv4_ss, &loop);
+	err = prepare_socket_peer_connection(&ipv4_ss, &ipv4_endpoint, &loop);
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
 		goto destroy_loop;
+	}
+
+	struct cio_socket_address ipv6_endpoint;
+	err = cio_init_inet_socket_address(&ipv6_endpoint, cio_get_inet_address_any6(),
+	                                   SERVERSOCKET_LISTEN_PORT);
+	if (err != CIO_SUCCESS) {
+		sclog_message(&sj_log, SCLOG_ERROR,
+		              "Could not init listen socket address!");
+		goto close_ipv4_ss;
+	}
+
+	struct cio_server_socket ipv6_ss;
+	err = prepare_socket_peer_connection(&ipv6_ss, &ipv6_endpoint, &loop);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
+		goto close_ipv4_ss;
 	}
 
 	sclog_message(&sj_log, SCLOG_INFO, "Starting eventloop!");
@@ -97,6 +126,14 @@ int main(void)
 		ret = EXIT_FAILURE;
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not run eventloop!");
 	}
+
+	// TODO(gatzka): implement that
+	//destroy_all_peers();
+
+	cio_server_socket_close(&ipv6_ss);
+
+close_ipv4_ss:
+	cio_server_socket_close(&ipv4_ss);
 
 destroy_loop:
 	cio_eventloop_destroy(&loop);

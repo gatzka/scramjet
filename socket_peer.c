@@ -46,7 +46,6 @@
 static const uint64_t close_timeout_ns =
     UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 enum { SERVERSOCKET_BACKLOG = 5 };
-enum { SERVERSOCKET_LISTEN_PORT = 12345 };
 
 static void message_read(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err, struct cio_read_buffer *buffer, size_t num_bytes)
 {
@@ -210,19 +209,10 @@ error:
 	cio_eventloop_cancel(ss->impl.loop);
 }
 
-enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, struct cio_eventloop *loop)
+enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, struct cio_socket_address *endpoint, struct cio_eventloop *loop)
 {
-	struct cio_socket_address endpoint;
-	enum cio_error err = cio_init_inet_socket_address(&endpoint, cio_get_inet_address_any4(),
-	                                                  SERVERSOCKET_LISTEN_PORT);
-	if (err != CIO_SUCCESS) {
-		sclog_message(&sj_log, SCLOG_ERROR,
-		              "Could not init listen socket address!");
-		return err;
-	}
-
-	err = cio_server_socket_init(ss, loop, SERVERSOCKET_BACKLOG,
-	                             cio_socket_address_get_family(&endpoint),
+	enum cio_error err = cio_server_socket_init(ss, loop, SERVERSOCKET_BACKLOG,
+	                             cio_socket_address_get_family(endpoint),
 	                             alloc_socket_jet_peer, free_socket_jet_peer,
 	                             close_timeout_ns, NULL);
 	if (err != CIO_SUCCESS) {
@@ -243,7 +233,7 @@ enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, stru
 		goto close_socket;
 	}
 
-	err = cio_server_socket_bind(ss, &endpoint);
+	err = cio_server_socket_bind(ss, endpoint);
 	if (err != CIO_SUCCESS) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not bind to socket endpoint!");
 		goto close_socket;
