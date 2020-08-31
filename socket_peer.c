@@ -37,6 +37,8 @@
 #include "cio/socket_address.h"
 #include "cio/util.h"
 
+#include "sclog/sclog.h"
+
 #include "messages.h"
 #include "protocol_version.h"
 #include "sj_log.h"
