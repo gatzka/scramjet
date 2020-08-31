@@ -28,11 +28,14 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "cio/error_code.h"
 #include "cio/eventloop.h"
+#include "cio/http_client.h"
 #include "cio/http_server.h"
 #include "cio/socket_address.h"
+#include "cio/util.h"
 
 #include "sclog/sclog.h"
 
@@ -41,6 +44,7 @@
 
 // TODO(gatzka): Make constants configuratble via cmake.
 enum { HTTPSERVER_LISTEN_PORT = 8080 };
+enum { READ_BUFFER_SIZE = 2000 };
 static const uint64_t HEADER_READ_TIMEOUT = UINT64_C(5) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 static const uint64_t BODY_READ_TIMEOUT = UINT64_C(5) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 static const uint64_t RESPONSE_TIMEOUT = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
@@ -48,30 +52,26 @@ static const uint64_t CLOSE_TIMEOUT_NS = UINT64_C(1) * UINT64_C(1000) * UINT64_C
 
 static void serve_error(struct cio_http_server *s, const char *reason)
 {
-    (void)s;
-    (void)reason;
-	//fprintf(stderr, "http server error: %s\n", reason);
-	//cio_http_server_shutdown(s, http_server_closed);
+	//TODO(gatzka): close all peers/websocket_peers?
+	sclog_message(&sj_log, SCLOG_ERROR, "http server error %s!", reason);
+	cio_http_server_shutdown(s, NULL);
 }
 
 static struct cio_socket *alloc_http_client(void)
 {
-	//struct cio_http_client *client = malloc(sizeof(*client) + READ_BUFFER_SIZE);
-	//if (cio_unlikely(client == NULL)) {
-	//	return NULL;
-	//}
+	struct cio_http_client *client = malloc(sizeof(*client) + READ_BUFFER_SIZE);
+	if (cio_unlikely(client == NULL)) {
+		return NULL;
+	}
 
-	//client->buffer_size = READ_BUFFER_SIZE;
-	//return &client->socket;
-
-    return NULL;
+	client->buffer_size = READ_BUFFER_SIZE;
+	return &client->socket;
 }
 
 static void free_http_client(struct cio_socket *socket)
 {
-	//struct cio_http_client *client = cio_container_of(socket, struct cio_http_client, socket);
-	//free(client);
-    (void)socket;
+	struct cio_http_client *client = cio_container_of(socket, struct cio_http_client, socket);
+	free(client);
 }
 
 enum cio_error prepare_websocket_peer_connection(struct cio_inet_address *address, struct cio_eventloop *loop)
