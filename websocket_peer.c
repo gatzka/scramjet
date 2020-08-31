@@ -26,16 +26,73 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "cio/error_code.h"
 #include "cio/eventloop.h"
+#include "cio/http_server.h"
 #include "cio/socket_address.h"
 
+#include "sclog/sclog.h"
+
+#include "sj_log.h"
 #include "websocket_peer.h"
 
-enum cio_error prepare_websocket_peer_connection(struct cio_socket_address *endpoint, struct cio_eventloop *loop)
-{
-    (void)endpoint;
-    (void)loop;
+// TODO(gatzka): Make constants configuratble via cmake.
+enum { HTTPSERVER_LISTEN_PORT = 8080 };
+static const uint64_t HEADER_READ_TIMEOUT = UINT64_C(5) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
+static const uint64_t BODY_READ_TIMEOUT = UINT64_C(5) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
+static const uint64_t RESPONSE_TIMEOUT = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
+static const uint64_t CLOSE_TIMEOUT_NS = UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 
-    return CIO_SUCCESS;
+static void serve_error(struct cio_http_server *s, const char *reason)
+{
+    (void)s;
+    (void)reason;
+	//fprintf(stderr, "http server error: %s\n", reason);
+	//cio_http_server_shutdown(s, http_server_closed);
+}
+
+static struct cio_socket *alloc_http_client(void)
+{
+	//struct cio_http_client *client = malloc(sizeof(*client) + READ_BUFFER_SIZE);
+	//if (cio_unlikely(client == NULL)) {
+	//	return NULL;
+	//}
+
+	//client->buffer_size = READ_BUFFER_SIZE;
+	//return &client->socket;
+
+    return NULL;
+}
+
+static void free_http_client(struct cio_socket *socket)
+{
+	//struct cio_http_client *client = cio_container_of(socket, struct cio_http_client, socket);
+	//free(client);
+    (void)socket;
+}
+
+enum cio_error prepare_websocket_peer_connection(struct cio_inet_address *address, struct cio_eventloop *loop)
+{
+	(void)loop;
+
+	struct cio_http_server_configuration config = {
+	    .on_error = serve_error,
+	    .read_header_timeout_ns = HEADER_READ_TIMEOUT,
+	    .read_body_timeout_ns = BODY_READ_TIMEOUT,
+	    .response_timeout_ns = RESPONSE_TIMEOUT,
+	    .close_timeout_ns = CLOSE_TIMEOUT_NS,
+	    .use_tcp_fastopen = false,
+	    .alloc_client = alloc_http_client,
+	    .free_client = free_http_client};
+
+	enum cio_error err = cio_init_inet_socket_address(&config.endpoint, address, HTTPSERVER_LISTEN_PORT);
+	if (err != CIO_SUCCESS) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not init server socket address for websocket!");
+		return err;
+	}
+
+	return CIO_SUCCESS;
 }
