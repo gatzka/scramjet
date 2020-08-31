@@ -72,6 +72,8 @@ add_executable(scramjet
     socket_peer.h
     state.c
     state.h
+    websocket_peer.c
+    websocket_peer.h
 )
 target_link_libraries(scramjet cio::cio)
 target_link_libraries(scramjet hs_hash::hs_hash)
