@@ -26,19 +26,11 @@
  * SOFTWARE.
  */
 
-#ifndef CIO_HTTP_LOCATION_H
-#define CIO_HTTP_LOCATION_H
+#ifndef SCRAMJET_LOG_H
+#define SCRAMJET_LOG_H 
 
 #include "sclog/sclog.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern struct sclog sj_log;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
