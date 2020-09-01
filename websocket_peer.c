@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "cio/compiler.h"
 #include "cio/error_code.h"
 #include "cio/eventloop.h"
 #include "cio/http_client.h"
@@ -52,9 +53,9 @@ static const uint64_t CLOSE_TIMEOUT_NS = UINT64_C(1) * UINT64_C(1000) * UINT64_C
 
 static void serve_error(struct cio_http_server *s, const char *reason)
 {
+	(void)s;
 	//TODO(gatzka): close all peers/websocket_peers?
 	sclog_message(&sj_log, SCLOG_ERROR, "http server error %s!", reason);
-	cio_http_server_shutdown(s, NULL);
 }
 
 static struct cio_socket *alloc_http_client(void)
@@ -73,11 +74,14 @@ static void free_http_client(struct cio_socket *socket)
 	struct cio_http_client *client = cio_container_of(socket, struct cio_http_client, socket);
 	free(client);
 }
-
-enum cio_error prepare_websocket_peer_connection(struct cio_inet_address *address, struct cio_eventloop *loop)
+static struct cio_http_location_handler *alloc_websocket_handler(const void *config)
 {
-	(void)loop;
+	(void)config;
+	return NULL;
+}
 
+enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server, struct cio_inet_address *address, struct cio_eventloop *loop)
+{
 	struct cio_http_server_configuration config = {
 	    .on_error = serve_error,
 	    .read_header_timeout_ns = HEADER_READ_TIMEOUT,
@@ -89,10 +93,33 @@ enum cio_error prepare_websocket_peer_connection(struct cio_inet_address *addres
 	    .free_client = free_http_client};
 
 	enum cio_error err = cio_init_inet_socket_address(&config.endpoint, address, HTTPSERVER_LISTEN_PORT);
-	if (err != CIO_SUCCESS) {
+	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not init server socket address for websocket!");
 		return err;
 	}
 
+	err = cio_http_server_init(server, loop, &config);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not init http server!");
+		return err;
+	}
+
+	struct cio_http_location target_jet;
+	err = cio_http_location_init(&target_jet, "/api/scramjet/1.0/", NULL, alloc_websocket_handler);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not init jet service location!");
+		goto shutdown_server;
+	}
+
+	err = cio_http_server_register_location(server, &target_jet);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not register jet service location!");
+		goto shutdown_server;
+	}
+
 	return CIO_SUCCESS;
+
+shutdown_server:
+	cio_http_server_shutdown(server, NULL);
+	return err;
 }
