@@ -43,6 +43,10 @@
 #include "sj_log.h"
 #include "websocket_peer.h"
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
 // TODO(gatzka): Make constants configuratble via cmake.
 enum { HTTPSERVER_LISTEN_PORT = 8080 };
 enum { READ_BUFFER_SIZE = 2000 };
@@ -74,10 +78,33 @@ static void free_http_client(struct cio_socket *socket)
 	struct cio_http_client *client = cio_container_of(socket, struct cio_http_client, socket);
 	free(client);
 }
+
+static void on_connect(struct cio_websocket *ws)
+{
+	(void)ws;
+}
+
+static void free_websocket_handler(struct cio_websocket_location_handler *wslh)
+{
+	struct websocket_peer *ws_peer = cio_container_of(wslh, struct websocket_peer, ws_handler);
+	free(ws_peer);
+}
 static struct cio_http_location_handler *alloc_websocket_handler(const void *config)
 {
 	(void)config;
-	return NULL;
+	struct websocket_peer *ws_peer = malloc(sizeof(*ws_peer));
+	if (cio_unlikely(ws_peer == NULL)) {
+		return NULL;
+	}
+
+	static const char *subprotocols[2] = {"jet"};
+	enum cio_error err = cio_websocket_location_handler_init(&ws_peer->ws_handler, subprotocols, ARRAY_SIZE(subprotocols), on_connect, free_websocket_handler);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		free(ws_peer);
+		return NULL;
+	}
+
+	return &ws_peer->ws_handler.http_location;
 }
 
 enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server, struct cio_inet_address *address, struct cio_eventloop *loop)
