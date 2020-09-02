@@ -45,7 +45,7 @@
 #include "socket_peer.h"
 
 //TODO(gatzka): make these constants configurable via cmake
-static const uint64_t close_timeout_ns =
+static const uint64_t CLOSE_TIMEOUT_NS =
     UINT64_C(1) * UINT64_C(1000) * UINT64_C(1000) * UINT64_C(1000);
 enum { SERVERSOCKET_BACKLOG = 5 };
 static const unsigned int KEEP_ALIVE_IDLE_S = 12;
@@ -232,7 +232,7 @@ enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, stru
 	enum cio_error err = cio_server_socket_init(ss, loop, SERVERSOCKET_BACKLOG,
 	                                            cio_socket_address_get_family(endpoint),
 	                                            alloc_socket_jet_peer, free_socket_jet_peer,
-	                                            close_timeout_ns, NULL);
+	                                            CLOSE_TIMEOUT_NS, NULL);
 	if (err != CIO_SUCCESS) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not init server socket!");
 		return err;
