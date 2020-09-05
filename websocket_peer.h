@@ -40,6 +40,8 @@
 struct websocket_peer {
 	struct peer peer;
     struct cio_websocket_location_handler ws_handler;
+	struct cio_write_buffer wb;
+	uint32_t write_message_length;
 };
  
 enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server, struct cio_inet_address *address, struct cio_eventloop *loop);

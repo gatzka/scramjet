@@ -59,8 +59,15 @@ static void message_read(struct cio_buffered_stream *bs, void *handler_context, 
 
 	struct socket_peer *peer = (struct socket_peer *)handler_context;
 
+	if (cio_unlikely(err == CIO_EOF)) {
+		sclog_message(&sj_log, SCLOG_INFO, "Connection closed by socket peer!");
+		close_peer(&peer->peer);
+		return;
+	}
+
 	if (cio_unlikely(err != CIO_SUCCESS)) {
-		peer->peer.recvd_hander(&peer->peer, err, NULL, 0);
+		sclog_message(&sj_log, SCLOG_ERROR, "Receiving message over socket failed!");
+		close_peer(&peer->peer);
 		return;
 	}
 
@@ -75,8 +82,15 @@ static void message_length_read(struct cio_buffered_stream *bs, void *handler_co
 
 	struct socket_peer *peer = (struct socket_peer *)handler_context;
 
+	if (cio_unlikely(err == CIO_EOF)) {
+		sclog_message(&sj_log, SCLOG_INFO, "Connection closed by socket peer!");
+		close_peer(&peer->peer);
+		return;
+	}
+
 	if (cio_unlikely(err != CIO_SUCCESS)) {
-		peer->peer.recvd_hander(&peer->peer, err, NULL, 0);
+		sclog_message(&sj_log, SCLOG_ERROR, "Receiving message length over socket failed!");
+		close_peer(&peer->peer);
 		return;
 	}
 
@@ -88,7 +102,8 @@ static void message_length_read(struct cio_buffered_stream *bs, void *handler_co
 
 	err = cio_buffered_stream_read_at_least(bs, &peer->rb, message_length, message_read, peer);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
-		peer->peer.recvd_hander(&peer->peer, err, NULL, 0);
+		sclog_message(&sj_log, SCLOG_ERROR, "Start receiving message over socket failed!");
+		close_peer(&peer->peer);
 	}
 }
 
@@ -102,12 +117,18 @@ static void shutdown_socket_peer(struct peer *jet_peer)
 static void sent_comnplete(struct cio_buffered_stream *bs, void *handler_context, enum cio_error err)
 {
 	(void)bs;
-
 	struct peer *peer = (struct peer *)handler_context;
+
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Sending message over socket failed!");
+		close_peer(peer);
+		return;
+	}
+
 	peer->sent_handler(peer, err);
 }
 
-static enum cio_error send_message_socket_peer(struct peer *jet_peer, peer_message_sent_t handler)
+static void send_message_socket_peer(struct peer *jet_peer, peer_message_sent_t handler)
 {
 	jet_peer->sent_handler = handler;
 
@@ -116,17 +137,25 @@ static enum cio_error send_message_socket_peer(struct peer *jet_peer, peer_messa
 	peer->write_message_length = (uint32_t)jet_peer->wbh.data.head.total_length;
 	cio_write_buffer_const_element_init(&peer->wb, &peer->write_message_length, sizeof(peer->write_message_length));
 	cio_write_buffer_queue_head(&jet_peer->wbh, &peer->wb);
-	return cio_buffered_stream_write(&peer->bs, &jet_peer->wbh, sent_comnplete, jet_peer);
+	enum cio_error err =  cio_buffered_stream_write(&peer->bs, &jet_peer->wbh, sent_comnplete, jet_peer);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Start sending message over socket failed!");
+		close_peer(&peer->peer);
+	}
 }
 
-static enum cio_error receive_message_socket_peer(struct peer *jet_peer, peer_message_received_t handler)
+static void receive_message_socket_peer(struct peer *jet_peer, peer_message_received_t handler)
 {
 	jet_peer->recvd_hander = handler;
 
 	struct socket_peer *peer =
 	    cio_container_of(jet_peer, struct socket_peer, peer);
 
-	return cio_buffered_stream_read_at_least(&peer->bs, &peer->rb, 4, message_length_read, peer);
+	enum cio_error err = cio_buffered_stream_read_at_least(&peer->bs, &peer->rb, 4, message_length_read, peer);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Start receiving message length over socket failed!");
+		close_peer(&peer->peer);
+	}
 }
 
 static struct cio_socket *alloc_socket_jet_peer(void)

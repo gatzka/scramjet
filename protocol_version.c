@@ -64,8 +64,5 @@ void send_protocol_version(struct peer *peer, peer_message_sent_t sent_handler)
 	cio_write_buffer_const_element_init(&peer->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
 	cio_write_buffer_queue_tail(&peer->wbh, &peer->wb);
 
-	enum cio_error err = peer->send_message(peer, sent_handler);
-	if (cio_unlikely(err != CIO_SUCCESS)) {
-        close_peer(peer);
-	}
+	peer->send_message(peer, sent_handler);
 }
