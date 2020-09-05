@@ -59,15 +59,20 @@ static const uint8_t PROTOCOL_VERSION[13] = {
     (uint8_t)((PROTOCOL_VERSION_PATCH >> 24) & 0xFF),
 };
 
-void send_protocol_version(struct jet_peer *peer, cio_buffered_stream_write_handler_t handler)
+static void send_protocol_version_complete(struct jet_peer *peer, enum cio_error err)
+{
+    (void)peer;
+    (void)err;
+}
+
+void send_protocol_version(struct jet_peer *peer)
 {
 	cio_write_buffer_head_init(&peer->wbh);
 	cio_write_buffer_const_element_init(&peer->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
 	cio_write_buffer_queue_tail(&peer->wbh, &peer->wb);
 
-	enum cio_error err = peer->send_message(peer, handler);
+	enum cio_error err = peer->send_message(peer, send_protocol_version_complete);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
-		sclog_message(&sj_log, SCLOG_ERROR, "Could not send protocol version information to peer!");
-		close_jet_peer(peer);
+        send_protocol_version_complete(peer, err);
 	}
 }
