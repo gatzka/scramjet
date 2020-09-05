@@ -59,13 +59,13 @@ static const uint8_t PROTOCOL_VERSION[13] = {
     (uint8_t)((PROTOCOL_VERSION_PATCH >> 24) & 0xFF),
 };
 
-static void send_protocol_version_complete(struct jet_peer *peer, enum cio_error err)
+static void send_protocol_version_complete(struct peer *peer, enum cio_error err)
 {
     (void)peer;
     (void)err;
 }
 
-void send_protocol_version(struct jet_peer *peer)
+void send_protocol_version(struct peer *peer)
 {
 	cio_write_buffer_head_init(&peer->wbh);
 	cio_write_buffer_const_element_init(&peer->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));

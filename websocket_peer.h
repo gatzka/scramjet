@@ -38,7 +38,7 @@
 #include "peer.h"
 
 struct websocket_peer {
-	struct jet_peer peer;
+	struct peer peer;
     struct cio_websocket_location_handler ws_handler;
 };
  

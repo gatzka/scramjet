@@ -34,6 +34,6 @@
 #include "jet_error.h"
 #include "peer.h"
 
-enum jet_error add_state(struct jet_peer *peer, size_t key_length, const char *key, size_t value_length, const char *value);
+enum jet_error add_state(struct peer *peer, size_t key_length, const char *key, size_t value_length, const char *value);
 
 #endif
