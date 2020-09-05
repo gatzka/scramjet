@@ -92,7 +92,7 @@ static void message_length_read(struct cio_buffered_stream *bs, void *handler_co
 	}
 }
 
-static void shutdown_socket_peer(struct jet_peer *jet_peer)
+static void shutdown_socket_peer(struct peer *jet_peer)
 {
 	struct socket_peer *peer =
 	    cio_container_of(jet_peer, struct socket_peer, peer);
@@ -103,11 +103,11 @@ static void sent_comnplete(struct cio_buffered_stream *bs, void *handler_context
 {
 	(void)bs;
 
-	struct jet_peer *peer = (struct jet_peer *)handler_context;
+	struct peer *peer = (struct peer *)handler_context;
 	peer->sent_handler(peer, err);
 }
 
-static enum cio_error send_message_socket_peer(struct jet_peer *jet_peer, peer_communication_complete_t handler)
+static enum cio_error send_message_socket_peer(struct peer *jet_peer, peer_communication_complete_t handler)
 {
 	jet_peer->sent_handler = handler;
 
@@ -119,7 +119,7 @@ static enum cio_error send_message_socket_peer(struct jet_peer *jet_peer, peer_c
 	return cio_buffered_stream_write(&peer->bs, &jet_peer->wbh, sent_comnplete, jet_peer);
 }
 
-static enum cio_error receive_message_socket_peer(struct jet_peer *jet_peer, peer_message_received_t handler)
+static enum cio_error receive_message_socket_peer(struct peer *jet_peer, peer_message_received_t handler)
 {
 	jet_peer->recvd_hander = handler;
 

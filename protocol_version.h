@@ -33,6 +33,6 @@
 
 #include "peer.h"
 
-void send_protocol_version(struct jet_peer *peer);
+void send_protocol_version(struct peer *peer);
 
 #endif
