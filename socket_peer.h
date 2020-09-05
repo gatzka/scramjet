@@ -45,7 +45,7 @@
 enum { BUFFER_SIZE = 128 };
 
 struct socket_peer {
-	struct jet_peer peer;
+	struct peer peer;
 
 	uint32_t message_length;
 	struct cio_socket socket;
