@@ -29,7 +29,7 @@
 #ifndef SCRAMJET_REQUEST_H
 #define SCRAMJET_REQUEST_H
 
-#include "jet_peer.h"
+#include "peer.h"
 
 void handle_request(struct jet_peer *peer);
 

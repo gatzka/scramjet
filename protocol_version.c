@@ -32,8 +32,8 @@
 #include "cio/compiler.h"
 #include "cio/error_code.h"
 
-#include "jet_peer.h"
 #include "messages.h"
+#include "peer.h"
 #include "protocol_version.h"
 #include "sj_log.h"
 

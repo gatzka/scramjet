@@ -55,11 +55,11 @@ endif()
 
 add_executable(scramjet
     jet_error.h
-    jet_peer.c
-    jet_peer.h
     list.h
     messages.c
     messages.h
+    peer.c
+    peer.h
     protocol_version.c
     protocol_version.h
     request.c

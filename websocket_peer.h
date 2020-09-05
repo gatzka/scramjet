@@ -35,7 +35,7 @@
 #include "cio/inet_address.h"
 #include "cio/websocket_location_handler.h"
 
-#include "jet_peer.h"
+#include "peer.h"
 
 struct websocket_peer {
 	struct jet_peer peer;

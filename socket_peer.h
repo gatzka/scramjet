@@ -39,7 +39,7 @@
 #include "cio/socket_address.h"
 #include "cio/write_buffer.h"
 
-#include "jet_peer.h"
+#include "peer.h"
 
 // TODO(gatzka): make BUFFER_SIZE configurable via cmake.
 enum { BUFFER_SIZE = 128 };
