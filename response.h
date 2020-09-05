@@ -29,7 +29,7 @@
 #ifndef SCRAMJET_RESPONSE_H
 #define SCRAMJET_RESPONSE_H
 
-#include "jet_peer.h"
+#include "peer.h"
 #include "jet_error.h"
 
 void send_response(struct jet_peer *peer, enum jet_error error);
