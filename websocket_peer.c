@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "cio/compiler.h"
+#include "cio/endian.h"
 #include "cio/error_code.h"
 #include "cio/eventloop.h"
 #include "cio/http_client.h"
@@ -92,6 +93,90 @@ static void free_websocket_handler(struct cio_websocket_location_handler *wslh)
 	struct websocket_peer *ws_peer = cio_container_of(wslh, struct websocket_peer, ws_handler);
 	free(ws_peer);
 }
+
+static void websocket_peer_closed(struct cio_websocket *ws, void *handler_context, enum cio_error err)
+{
+	(void)ws;
+	(void)handler_context;
+	(void)err;
+}
+
+static void shutdown_websocket_peer(struct peer *peer)
+{
+	struct websocket_peer *ws_peer = cio_container_of(peer, struct websocket_peer, peer);
+	cio_websocket_close(&ws_peer->ws_handler.websocket, CIO_WEBSOCKET_CLOSE_GOING_AWAY, NULL, websocket_peer_closed, NULL);
+}
+static void sent_complete(struct cio_websocket *ws, void *handler_context, enum cio_error err)
+{
+	(void)ws;
+
+	struct peer *peer = (struct peer *)handler_context;
+	peer->sent_handler(peer, err);
+}
+
+static void send_message_websocket_peer(struct peer *peer, peer_message_sent_t handler)
+{
+	peer->sent_handler = handler;
+
+	struct websocket_peer *ws_peer = cio_container_of(peer, struct websocket_peer, peer);
+	ws_peer->write_message_length = (uint32_t)peer->wbh.data.head.total_length;
+	cio_write_buffer_const_element_init(&ws_peer->wb, &ws_peer->write_message_length, sizeof(ws_peer->write_message_length));
+	cio_write_buffer_queue_head(&peer->wbh, &ws_peer->wb);
+
+	enum cio_error err = cio_websocket_write_message_first_chunk(&ws_peer->ws_handler.websocket, peer->wbh.data.head.total_length, &peer->wbh, true, true, sent_complete, peer);
+	if (err != CIO_SUCCESS) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Start sending message over websocket failed!");
+		close_peer(&ws_peer->peer);
+	}
+}
+
+static void message_read(struct cio_websocket *ws, void *handler_context, enum cio_error err, size_t frame_length, uint8_t *data, size_t chunk_length, bool last_chunk, bool last_frame, bool is_binary)
+{
+	(void)ws;
+	(void)chunk_length;
+
+	struct websocket_peer *ws_peer = (struct websocket_peer *)handler_context;
+
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Receiving message over websocket failed!");
+		close_peer(&ws_peer->peer);
+		return;
+	}
+
+	if (!last_chunk || !is_binary || !last_frame) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Receiving websocket message in wrong format!");
+		close_peer(&ws_peer->peer);
+		return;
+	}
+
+	uint32_t message_length;
+	memcpy(&message_length, data, sizeof(message_length));
+	message_length = cio_le32toh(message_length);
+
+	if (cio_unlikely(frame_length != message_length + sizeof(message_length))) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Websocket frame length does not correspond with jet message length!");
+		close_peer(&ws_peer->peer);
+		return;
+	}
+
+	uint8_t *message = data + sizeof(message_length);
+	ws_peer->peer.recvd_hander(&ws_peer->peer, CIO_SUCCESS, message, message_length);
+}
+
+static void receive_message_websocket_peer(struct peer *peer, peer_message_received_t handler)
+{
+	peer->recvd_hander = handler;
+
+	struct websocket_peer *ws_peer =
+	    cio_container_of(peer, struct websocket_peer, peer);
+
+	enum cio_error err = cio_websocket_read_message(&ws_peer->ws_handler.websocket, message_read, ws_peer);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Start receiving message over websocket failed!");
+		close_peer(&ws_peer->peer);
+	}
+}
+
 static struct cio_http_location_handler *alloc_websocket_handler(const void *config)
 {
 	(void)config;
@@ -100,12 +185,16 @@ static struct cio_http_location_handler *alloc_websocket_handler(const void *con
 		return NULL;
 	}
 
-	static const char *subprotocols[2] = {"jet"};
+	static const char *subprotocols[] = {"jet"};
 	enum cio_error err = cio_websocket_location_handler_init(&ws_peer->ws_handler, subprotocols, ARRAY_SIZE(subprotocols), on_connect, free_websocket_handler);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		free(ws_peer);
 		return NULL;
 	}
+
+	ws_peer->peer.shutdown_peer = shutdown_websocket_peer;
+	ws_peer->peer.send_message = send_message_websocket_peer;
+	ws_peer->peer.receive_message = receive_message_websocket_peer;
 
 	return &ws_peer->ws_handler.http_location;
 }

@@ -44,8 +44,8 @@ struct peer {
 	struct cio_write_buffer wb;
 	struct cio_write_buffer wbh;
 	void (*shutdown_peer)(struct peer *peer);
-	enum cio_error (*receive_message)(struct peer *peer, peer_message_received_t handler);
-	enum cio_error (*send_message)(struct peer *peer, peer_message_sent_t handler);
+	void (*receive_message)(struct peer *peer, peer_message_received_t handler);
+	void (*send_message)(struct peer *peer, peer_message_sent_t handler);
 
 	peer_message_sent_t sent_handler;
 	peer_message_received_t recvd_hander;
