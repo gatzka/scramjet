@@ -28,7 +28,7 @@
 
 #include "response.h"
 #include "jet_error.h"
-#include "jet_peer.h"
+#include "peer.h"
 
 void send_response(struct jet_peer *peer, enum jet_error error)
 {
