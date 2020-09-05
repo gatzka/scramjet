@@ -62,10 +62,6 @@ add_executable(scramjet
     peer.h
     protocol_version.c
     protocol_version.h
-    request.c
-    request.h
-    response.c
-    response.h
     scramjet.c
     sj_log.c
     socket_peer.c
