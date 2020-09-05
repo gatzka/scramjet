@@ -107,7 +107,7 @@ static void sent_comnplete(struct cio_buffered_stream *bs, void *handler_context
 	peer->sent_handler(peer, err);
 }
 
-static enum cio_error send_message_socket_peer(struct peer *jet_peer, peer_communication_complete_t handler)
+static enum cio_error send_message_socket_peer(struct peer *jet_peer, peer_message_sent_t handler)
 {
 	jet_peer->sent_handler = handler;
 
@@ -211,7 +211,7 @@ static void handle_accept(struct cio_server_socket *ss, void *handler_context,
 		return;
 	}
 
-	send_protocol_version(&peer->peer);
+	start_peer(&peer->peer);
 }
 
 enum cio_error prepare_socket_peer_connection(struct cio_server_socket *ss, struct cio_socket_address *endpoint, struct cio_eventloop *loop)

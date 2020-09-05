@@ -29,10 +29,8 @@
 #ifndef SCRAMJET_PROTOCOL_VERSION_H
 #define SCRAMJET_PROTOCOL_VERSION_H
 
-#include "cio/buffered_stream.h"
-
 #include "peer.h"
 
-void send_protocol_version(struct peer *peer);
+void send_protocol_version(struct peer *peer, peer_message_sent_t sent_handler);
 
 #endif

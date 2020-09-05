@@ -26,4 +26,25 @@
  * SOFTWARE.
  */
 
+#include "cio/error_code.h"
+
 #include "peer.h"
+#include "protocol_version.h"
+
+static void receive_message(struct peer *peer, enum cio_error err)
+{
+    (void)peer;
+    (void)err;
+}
+
+void start_peer(struct peer *peer)
+{
+    send_protocol_version(peer, receive_message);
+}
+
+void close_peer(struct peer *peer)
+{
+    // remove all states and methods
+    //notify fetching peers
+    peer->shutdown_peer(peer);
+}
