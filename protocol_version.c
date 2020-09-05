@@ -28,7 +28,6 @@
 
 #include <stdint.h>
 
-#include "cio/buffered_stream.h"
 #include "cio/compiler.h"
 #include "cio/error_code.h"
 
@@ -43,36 +42,30 @@ static const uint32_t PROTOCOL_VERSION_PATCH = UINT32_C(0);
 
 static const uint8_t PROTOCOL_VERSION[13] = {
     (uint8_t)MESSAGE_API_VERSION,
-    (uint8_t)(PROTOCOL_VERSION_MAJOR & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 8) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 16) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 24) & 0xFF),
+    (uint8_t)(PROTOCOL_VERSION_MAJOR & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 8U) & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 16U) & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_MAJOR >> 24U) & 0xFFU),
 
-    (uint8_t)(PROTOCOL_VERSION_MINOR & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MINOR >> 8) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MINOR >> 16) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_MINOR >> 24) & 0xFF),
+    (uint8_t)(PROTOCOL_VERSION_MINOR & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_MINOR >> 8U) & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_MINOR >> 16U) & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_MINOR >> 24U) & 0xFFU),
 
-    (uint8_t)(PROTOCOL_VERSION_PATCH & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_PATCH >> 8) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_PATCH >> 16) & 0xFF),
-    (uint8_t)((PROTOCOL_VERSION_PATCH >> 24) & 0xFF),
+    (uint8_t)(PROTOCOL_VERSION_PATCH & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_PATCH >> 8U) & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_PATCH >> 16U) & 0xFFU),
+    (uint8_t)((PROTOCOL_VERSION_PATCH >> 24U) & 0xFFU),
 };
 
-static void send_protocol_version_complete(struct peer *peer, enum cio_error err)
-{
-    (void)peer;
-    (void)err;
-}
-
-void send_protocol_version(struct peer *peer)
+void send_protocol_version(struct peer *peer, peer_message_sent_t sent_handler)
 {
 	cio_write_buffer_head_init(&peer->wbh);
 	cio_write_buffer_const_element_init(&peer->wb, PROTOCOL_VERSION, sizeof(PROTOCOL_VERSION));
 	cio_write_buffer_queue_tail(&peer->wbh, &peer->wb);
 
-	enum cio_error err = peer->send_message(peer, send_protocol_version_complete);
+	enum cio_error err = peer->send_message(peer, sent_handler);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
-        send_protocol_version_complete(peer, err);
+        close_peer(peer);
 	}
 }

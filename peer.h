@@ -37,7 +37,7 @@
 
 struct peer;
 
-typedef void (*peer_communication_complete_t)(struct peer *, enum cio_error err);
+typedef void (*peer_message_sent_t)(struct peer *, enum cio_error err);
 typedef void (*peer_message_received_t)(struct peer *, enum cio_error err, uint8_t *msg, size_t msg_len);
 
 struct peer {
@@ -45,10 +45,13 @@ struct peer {
 	struct cio_write_buffer wbh;
 	void (*shutdown_peer)(struct peer *peer);
 	enum cio_error (*receive_message)(struct peer *peer, peer_message_received_t handler);
-	enum cio_error (*send_message)(struct peer *peer, peer_communication_complete_t handler);
+	enum cio_error (*send_message)(struct peer *peer, peer_message_sent_t handler);
 
-	peer_communication_complete_t sent_handler;
+	peer_message_sent_t sent_handler;
 	peer_message_received_t recvd_hander;
 };
+
+void start_peer(struct peer *peer);
+void close_peer(struct peer *peer);
 
 #endif
