@@ -40,6 +40,7 @@
 
 #include "sclog/sclog.h"
 
+#include "protocol_version.h"
 #include "sj_log.h"
 #include "websocket_peer.h"
 
@@ -81,7 +82,9 @@ static void free_http_client(struct cio_socket *socket)
 
 static void on_connect(struct cio_websocket *ws)
 {
-	(void)ws;
+	struct cio_websocket_location_handler *handler = cio_container_of(ws, struct cio_websocket_location_handler, websocket);
+	struct websocket_peer *ws_peer = cio_container_of(handler, struct websocket_peer, ws_handler);
+	send_protocol_version(&ws_peer->peer);
 }
 
 static void free_websocket_handler(struct cio_websocket_location_handler *wslh)

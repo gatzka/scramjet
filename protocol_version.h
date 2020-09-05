@@ -33,6 +33,6 @@
 
 #include "jet_peer.h"
 
-void send_protocol_version(struct jet_peer *peer, cio_buffered_stream_write_handler_t handler);
+void send_protocol_version(struct jet_peer *peer);
 
 #endif
