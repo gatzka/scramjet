@@ -31,6 +31,9 @@
 #include <stdlib.h>
 
 #include "cio/eventloop.h"
+#include "cio/http_location.h"
+#include "cio/http_server.h"
+#include "cio/inet_address.h"
 #include "cio/server_socket.h"
 #include "cio/socket_address.h"
 #include "cio/unix_address.h"
@@ -40,6 +43,7 @@
 
 #include "sj_log.h"
 #include "socket_peer.h"
+#include "websocket_peer.h"
 
 enum { SERVERSOCKET_LISTEN_PORT = 12345 };
 
@@ -134,7 +138,16 @@ int main(void)
 	if (err != CIO_SUCCESS) {
 		ret = EXIT_FAILURE;
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not setup UDS server socket!");
-		goto close_ipv4_ss;
+		goto close_ipv6_ss;
+	}
+
+	struct cio_http_server http_server;
+	struct cio_http_location target_jet;
+	err = prepare_websocket_peer_connection(&http_server, cio_get_inet_address_any6(), &target_jet, &loop);
+	if (err != CIO_SUCCESS) {
+		ret = EXIT_FAILURE;
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not setup websocket server!");
+		goto close_uds;
 	}
 
 	sclog_message(&sj_log, SCLOG_INFO, "Starting eventloop!");
@@ -147,6 +160,9 @@ int main(void)
 
 	// TODO(gatzka): implement that
 	//destroy_all_peers();
+
+close_uds:
+	cio_server_socket_close(&uds_ss);
 
 close_ipv6_ss:
 	cio_server_socket_close(&ipv6_ss);
