@@ -31,10 +31,9 @@
 #include "peer.h"
 #include "protocol_version.h"
 
-static void receive_message(struct peer *peer, enum cio_error err)
+static void receive_message(struct peer *peer)
 {
     (void)peer;
-    (void)err;
 }
 
 void start_peer(struct peer *peer)
