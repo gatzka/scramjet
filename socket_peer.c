@@ -72,7 +72,7 @@ static void message_read(struct cio_buffered_stream *bs, void *handler_context, 
 	}
 
 	uint8_t *message = cio_read_buffer_get_read_ptr(buffer);
-	peer->peer.recvd_hander(&peer->peer, CIO_SUCCESS, message, peer->message_length);
+	peer->peer.recvd_hander(&peer->peer, message, peer->message_length);
 	cio_read_buffer_consume(buffer, peer->message_length);
 }
 
@@ -125,7 +125,7 @@ static void sent_comnplete(struct cio_buffered_stream *bs, void *handler_context
 		return;
 	}
 
-	peer->sent_handler(peer, err);
+	peer->sent_handler(peer);
 }
 
 static void send_message_socket_peer(struct peer *jet_peer, peer_message_sent_t handler)
