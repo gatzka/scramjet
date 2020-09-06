@@ -109,9 +109,15 @@ static void shutdown_websocket_peer(struct peer *peer)
 static void sent_complete(struct cio_websocket *ws, void *handler_context, enum cio_error err)
 {
 	(void)ws;
-
 	struct peer *peer = (struct peer *)handler_context;
-	peer->sent_handler(peer, err);
+
+	if (err != CIO_SUCCESS) {
+		struct websocket_peer *ws_peer = cio_container_of(peer, struct websocket_peer, peer);
+		sclog_message(&sj_log, SCLOG_ERROR, "Sending message over websocket failed!");
+		close_peer(&ws_peer->peer);
+	}
+
+	peer->sent_handler(peer);
 }
 
 static void send_message_websocket_peer(struct peer *peer, peer_message_sent_t handler)
@@ -160,7 +166,7 @@ static void message_read(struct cio_websocket *ws, void *handler_context, enum c
 	}
 
 	uint8_t *message = data + sizeof(message_length);
-	ws_peer->peer.recvd_hander(&ws_peer->peer, CIO_SUCCESS, message, message_length);
+	ws_peer->peer.recvd_hander(&ws_peer->peer, message, message_length);
 }
 
 static void receive_message_websocket_peer(struct peer *peer, peer_message_received_t handler)
