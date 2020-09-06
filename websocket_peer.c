@@ -35,6 +35,7 @@
 #include "cio/error_code.h"
 #include "cio/eventloop.h"
 #include "cio/http_client.h"
+#include "cio/http_location.h"
 #include "cio/http_server.h"
 #include "cio/socket_address.h"
 #include "cio/util.h"
@@ -205,7 +206,7 @@ static struct cio_http_location_handler *alloc_websocket_handler(const void *con
 	return &ws_peer->ws_handler.http_location;
 }
 
-enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server, struct cio_inet_address *address, struct cio_eventloop *loop)
+enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server, const struct cio_inet_address *address, struct cio_http_location *target_jet, struct cio_eventloop *loop)
 {
 	struct cio_http_server_configuration config = {
 	    .on_error = serve_error,
@@ -229,16 +230,21 @@ enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server,
 		return err;
 	}
 
-	struct cio_http_location target_jet;
-	err = cio_http_location_init(&target_jet, "/api/scramjet/1.0/", NULL, alloc_websocket_handler);
+	err = cio_http_location_init(target_jet, "/api/scramjet/1.0/", NULL, alloc_websocket_handler);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not init jet service location!");
 		goto shutdown_server;
 	}
 
-	err = cio_http_server_register_location(server, &target_jet);
+	err = cio_http_server_register_location(server, target_jet);
 	if (cio_unlikely(err != CIO_SUCCESS)) {
 		sclog_message(&sj_log, SCLOG_ERROR, "Could not register jet service location!");
+		goto shutdown_server;
+	}
+
+	err = cio_http_server_serve(server);
+	if (cio_unlikely(err != CIO_SUCCESS)) {
+		sclog_message(&sj_log, SCLOG_ERROR, "Could not start serving http!");
 		goto shutdown_server;
 	}
 
