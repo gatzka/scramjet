@@ -33,6 +33,7 @@
 #include "cio/error_code.h"
 #include "cio/eventloop.h"
 #include "cio/inet_address.h"
+#include "cio/http_location.h"
 #include "cio/websocket_location_handler.h"
 
 #include "peer.h"
@@ -44,6 +45,6 @@ struct websocket_peer {
 	uint32_t write_message_length;
 };
  
-enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server, struct cio_inet_address *address, struct cio_eventloop *loop);
+enum cio_error prepare_websocket_peer_connection(struct cio_http_server *server, const struct cio_inet_address *address, struct cio_http_location *target_jet, struct cio_eventloop *loop);
 
 #endif
