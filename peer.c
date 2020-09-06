@@ -26,14 +26,25 @@
  * SOFTWARE.
  */
 
+#include <stdint.h>
+#include <stdlib.h>
+
 #include "cio/error_code.h"
 
 #include "peer.h"
 #include "protocol_version.h"
 
+static void handle_message(struct peer *peer, uint8_t *msg, size_t msg_len)
+{
+    (void)msg;
+    (void)msg_len;
+
+    close_peer(peer);
+}
+
 static void receive_message(struct peer *peer)
 {
-    (void)peer;
+    peer->receive_message(peer, handle_message);
 }
 
 void start_peer(struct peer *peer)
