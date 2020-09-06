@@ -37,8 +37,8 @@
 
 struct peer;
 
-typedef void (*peer_message_sent_t)(struct peer *);
-typedef void (*peer_message_received_t)(struct peer *, uint8_t *msg, size_t msg_len);
+typedef void (*peer_message_sent_t)(struct peer *peer);
+typedef void (*peer_message_received_t)(struct peer *peer, uint8_t *msg, size_t msg_len);
 
 struct peer {
 	struct cio_write_buffer wb;
