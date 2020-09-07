@@ -95,18 +95,12 @@ static void free_websocket_handler(struct cio_websocket_location_handler *wslh)
 	free(ws_peer);
 }
 
-static void websocket_peer_closed(struct cio_websocket *ws, void *handler_context, enum cio_error err)
-{
-	(void)ws;
-	(void)handler_context;
-	(void)err;
-}
-
 static void shutdown_websocket_peer(struct peer *peer)
 {
-	struct websocket_peer *ws_peer = cio_container_of(peer, struct websocket_peer, peer);
-	cio_websocket_close(&ws_peer->ws_handler.websocket, CIO_WEBSOCKET_CLOSE_GOING_AWAY, NULL, websocket_peer_closed, NULL);
+	(void)peer;
+	// Do nothing here. The websocket layer itself closes the websocket connection.
 }
+
 static void sent_complete(struct cio_websocket *ws, void *handler_context, enum cio_error err)
 {
 	(void)ws;
