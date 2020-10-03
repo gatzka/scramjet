@@ -58,6 +58,7 @@ add_executable(scramjet
     list.h
     messages.c
     messages.h
+    functions.h
     peer.c
     peer.h
     protocol_version.c
