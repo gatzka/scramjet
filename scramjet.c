@@ -60,11 +60,12 @@ int main(void)
 	int ret = EXIT_SUCCESS;
 
 	struct sclog_sink stderr_sink;
-	if (sclog_stderr_sink_init(&stderr_sink) != 0) {
+	if (sclog_stderr_sink_init(&stderr_sink, SCLOG_INFO) != 0) {
 		return EXIT_FAILURE;
 	}
 
-	if (sclog_init(&sj_log, "scramjet", SCLOG_INFO, &stderr_sink) != 0) {
+	struct sclog_sink *sinks[] = {&stderr_sink};
+	if (sclog_init(&sj_log, "scramjet", sinks, 1) != 0) {
 		return EXIT_FAILURE;
 	}
 
