@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 include(FetchContent)
 
 FetchContent_Declare(GatzkaToolchainFiles
-    GIT_REPOSITORY https://github.com/gatzka/cmake-toolchain-files.git
+    GIT_REPOSITORY git@github.com:gatzka/cmake-toolchain-files.git
     SOURCE_DIR ${CMAKE_BINARY_DIR}/toolchains
 )
 FetchContent_MakeAvailable(GatzkaToolchainFiles)
@@ -18,13 +18,10 @@ if(cio_FOUND)
 else()
     message(STATUS "cio not installed, fetching it")
     FetchContent_Declare(cio
-        GIT_REPOSITORY https://github.com/gatzka/cio.git
+        GIT_REPOSITORY git@github.com:gatzka/cio.git
+        GIT_TAG        origin/main
     )
-    FetchContent_GetProperties(cio)
-    if(NOT cio_POPULATED)
-        FetchContent_Populate(cio)
-        add_subdirectory(${cio_SOURCE_DIR}/lib/ ${cio_BINARY_DIR})
-    endif()
+    FetchContent_MakeAvailable(cio)
 endif()
 
 find_package(hs_hash QUIET)
@@ -33,7 +30,7 @@ if(hs_hash_FOUND)
 else()
     message(STATUS "hs_hash not installed, fetching it")
     FetchContent_Declare(hs_hash
-        GIT_REPOSITORY https://github.com/gatzka/hs_hash.git
+        GIT_REPOSITORY git@github.com:gatzka/hs_hash.git
     )
     FetchContent_MakeAvailable(hs_hash)
 endif()
@@ -44,13 +41,9 @@ if(sclog_FOUND)
 else()
     message(STATUS "sclog not installed, fetching it")
     FetchContent_Declare(sclog
-        GIT_REPOSITORY https://github.com/gatzka/sclog.git
+        GIT_REPOSITORY git@github.com:gatzka/sclog.git
     )
-    FetchContent_GetProperties(sclog)
-    if(NOT sclog_POPULATED)
-        FetchContent_Populate(sclog)
-        add_subdirectory(${sclog_SOURCE_DIR}/lib/ ${sclog_BINARY_DIR})
-    endif()
+    FetchContent_MakeAvailable(sclog)
 endif()
 
 add_executable(scramjet
